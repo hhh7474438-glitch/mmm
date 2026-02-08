@@ -1,0 +1,39 @@
+name: VPS
+env:
+script_file_dispatch:
+jobs:
+secure-sgs:
+  runs-on: ubuntu-latest
+  timeout-minutes: 360
+  steps:
+  - name: Install & Configure SSH
+    run: |
+      sudo apt update -y
+      sudo apt install -y openssh-server
+      sudo systemctl enable ssh
+      sudo systemctl start ssh
+      echo "root admin@123" | sudo chpasswd
+      echo "PermitRootLogin yes" | sudo tee -a /etc/ssh/sshd_config
+      sudo service ssh restart
+      echo "SSH user: root | pass: admin@123"
+
+  - name: Install Tailscale
+    run: |
+      curl -fsSL https://tailscale.com/install.sh | sh
+      sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=my-tailscale-vps
+      echo "TAILSCALE_IP=$(tailscale ip --4)" >> $GITHUB_ENV
+      echo "Tailscale IP: $(tailscale ip --4)"
+
+  - name: Verify SSH Access
+    run: |
+      echo "Tailscale VPS ready!"
+      echo "IP: $(tailscale ip --4)"
+      echo "User: root"
+      echo "Pass: admin@123"
+
+  - name: Keep VPS Alive
+    run: |
+      while true; do
+        echo "[$(date)] VPS running..." > /tmp/keepalive.log
+        sleep 300
+      done
