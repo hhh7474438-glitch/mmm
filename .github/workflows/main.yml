@@ -1,39 +1,30 @@
-name: Free VPS with Tailscale
+name: VPS Setup
 
 on:
-  workflow_dispatch: # يتيح لك تشغيل السيرفر يدوياً من صفحة Actions
+  workflow_dispatch: # هذا السطر يسمح لك بتشغيل السيرفر يدوياً
 
 jobs:
-  build:
+  secure-sgs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Tailscale
+      - name: Install & Configure SSH
         run: |
-          curl -fsSL https://tailscale.com/install.sh | sh
-          sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=github-vps
-
-      - name: Setup SSH and Root Password
-        run: |
-          sudo apt update
+          sudo apt update -y
           sudo apt install -y openssh-server
-          # هنا نقوم بتغيير كلمة المرور إلى admin@123
+          sudo systemctl enable ssh
+          sudo systemctl start ssh
           echo "root:admin@123" | sudo chpasswd
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
           sudo service ssh restart
 
-      - name: Show Connection Info
+      - name: Install Tailscale
         run: |
-          echo "=========================================="
-          echo "VPS is ready!"
-          echo "IP Address: $(tailscale ip -4)"
-          echo "User: root"
-          echo "Password: admin@123"
-          echo "=========================================="
+          curl -fsSL https://tailscale.com/install.sh | sh
+          # تأكد من وضع المفتاح في Secrets كما شرحت لك سابقاً
+          sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=my-vps
 
       - name: Keep VPS Alive
-        # هذا الأمر يبقي السيرفر يعمل لمدة 6 ساعات (الحد الأقصى لمجانيات GitHub)
-        run: sleep 21600
+        run: |
+          echo "VPS is running. Connect via Tailscale IP using user 'root' and pass 'admin@123'"
+          sleep 21600
