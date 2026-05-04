@@ -1,28 +1,27 @@
-# إعدادات معمارية الجهاز المستهدف (تدعم الأجهزة الحديثة)
+# تفعيل البناء المتوازي لتسريع العملية في GitHub Actions
+MAKEFLAGS += -j$(shell sysctl -n hw.ncpu)
+
+# المعماريات المطلوبة لأجهزة الآيفون الحديثة
 ARCHS = arm64 arm64e
 
-# استهداف الحد الأدنى من إصدار iOS (يفضل 13.0 وما فوق للألعاب الحديثة)
-TARGET := iphone:clang:latest:13.0
+# استهداف نظام iOS 14 لضمان توافق arm64e
+TARGET := iphone:clang:latest:14.0
 
-# ربط أداة الـ Theos بسيرفرك
 include $(THEOS)/makefiles/common.mk
 
-# اسم التويك (اسم مشروعك)
+# اسم مشروعك المميز
 TWEAK_NAME = Follwerk
 
-# الملفات البرمجية التي سيتم بناؤها (تأكد من مطابقة اسم الملف لديك)
+# ربط الملفات البرمجية والمكتبات
 Follwerk_FILES = Tweak.x
-
-# المكتبات البرمجية المطلوبة لرسم الخطوط والتعامل مع الواجهة
 Follwerk_FRAMEWORKS = UIKit CoreGraphics Foundation
 
-# إعدادات المترجم لضمان الدقة العالية (Segalign ضروري للألعاب الضخمة)
+# إعدادات المترجم المتقدمة
 Follwerk_CFLAGS = -fobjc-arc
 Follwerk_LDFLAGS = -Wl,-segalign,4000
 
-# دمج ملفات البناء
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-# أمر لتنظيف الملفات المؤقتة بعد البناء
+# تنظيف الكاش وإعادة تشغيل اللعبة عند التثبيت
 after-install::
 	install.exec "killall -9 8BallPool"
