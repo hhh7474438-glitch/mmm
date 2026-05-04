@@ -11,20 +11,25 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # تم التحديث إلى v4
+        uses: actions/checkout@v4
 
       - name: Setup Theos
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          # تحميل Theos
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          # تحميل الـ SDK (نستخدم نظام iOS 14.5 كمثال مستقر للألعاب)
+          git clone https://github.com/theos/sdks.git ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build the Hack (dylib)
+      - name: Build Follwerk Package
         run: |
           export THEOS=~/theos
-          make FINALPACKAGE=1
-
+          # تنفيذ بناء الحزمة الكاملة (deb)
+          make package FINALPACKAGE=1
+        
       - name: Upload Result
-        uses: actions/upload-artifact@v4 # هذا هو التعديل الأساسي لحل المشكلة
+        uses: actions/upload-artifact@v4
         with:
-          name: Hussein-Saad-Hack
-          path: .theos/obj/debug/*.dylib
+          name: Follwerk-Installer
+          # تعديل المسار ليشمل ملف الـ deb الناتج
+          path: packages/*.deb
