@@ -1,6 +1,6 @@
 #import <UIKit/UIKit.h>
 
-// --- تعريفات الهياكل البرمجية (لضمان دقة فيزياء اللعبة) ---
+// --- تعريفات الهياكل البرمجية المصححة ---
 typedef struct {
     double mValue; 
 } MCNumber;
@@ -10,49 +10,53 @@ typedef struct {
     MCNumber y;
 } MCPoint;
 
-// --- 1. ميزات التحكم بفيزياء الكرة والمسارات ---
+// --- تطوير Follwerk: ميزة رادار الكرات ---
 %hook BallManager
-// تفعيل الدليل البصري دائماً (الخطوط الطويلة)
+
+// ميزة 1: تفعيل الخطوط الطويلة لكل الكرات (التطوير المطلوب)
+- (bool)shouldShowPathForAllBalls {
+    return YES; 
+}
+
+// ميزة 2: تفعيل الدليل البصري دائماً
 - (bool)isVisualGuidePointingToObjectBall {
     return YES;
 }
 
-// إظهار الخط حتى في الأوضاع التي تمنعه اللعبة
+// ميزة 3: إظهار الخطوط حتى في الأوضاع الصعبة
 - (bool)shouldShowBallGuide {
     return YES;
 }
 
-// تحديث أعلام تمييز الكرات لضمان الدقة
 - (void)updateBallHighlightFlags {
     %orig;
 }
 %end
 
-// --- 2. ميزات تتبع موقع الكرة (مفيد للتصويب التلقائي مستقبلاً) ---
+// --- ميزات تتبع الإحداثيات والفيزياء ---
 %hook Ball
 - (void)setPosition:(CGPoint)arg1 {
-    // تسجيل الإحداثيات في نظام الـ Console الخاص بك في Follwerk
-    NSLog(@"[Follwerk] Ball Moving to: x=%f, y=%f", arg1.x, arg1.y);
+    // تسجيل حركة الكرات في السيرفر (Ubuntu) لمتابعة الأداء
+    NSLog(@"[Follwerk] Ball Tracking: x=%f, y=%f", arg1.x, arg1.y);
     %orig(arg1);
 }
 
-// ميزة تحديد الكرة المستهدفة فوق أعلى رقم
+// ميزة تحديد الكرة المستهدفة
 - (bool)isAboveHighestBallNumber:(int)arg1 {
     return %orig;
 }
 %end
 
-// --- 3. ميزات الواجهة الأمامية (HUD) ---
-%hook GameHUD8BallPoolBallCounter
-- (void)setupWithHUD:(id)arg1 is9BallGame:(bool)arg2 side:(int)arg3 {
-    %orig;
-    NSLog(@"[Follwerk] Hack Active for this Match");
-}
-%end
-
-// منع اللعبة من اكتشاف التعديل المفاجئ في السرعة
+// --- ميزات حماية وتثبيت المسار ---
 %hook BallPhysicsProperties
 - (void)setVelocity:(MCPoint)arg1 {
     %orig(arg1);
+}
+%end
+
+%hook GameHUD8BallPoolBallCounter
+- (void)setupWithHUD:(id)arg1 is9BallGame:(bool)arg2 side:(int)arg3 {
+    %orig;
+    NSLog(@"[Follwerk] Professional Suite Active");
 }
 %end
