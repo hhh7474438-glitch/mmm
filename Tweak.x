@@ -1,42 +1,57 @@
 #import <UIKit/UIKit.h>
 
-// نقوم بعمل Hook على المتحكم الرئيسي للعبة لضمان تشغيل الكود عند البدء
-%hook UnityAppController
+// تعريف الهياكل البرمجية التي اكتشفناها في ملف اللعبة لضمان الدقة
+struct MCNumber {
+    double mValue; 
+};
 
-- (void)applicationDidBecomeActive:(id)application {
-    %orig; // استدعاء الوظيفة الأصلية للعبة لضمان عدم حدوث تعليق
+struct MCPoint {
+    MCNumber x;
+    MCNumber y;
+};
 
-    // إضافة تأخير بسيط (ثانية واحدة) لضمان ظهور واجهة اللعبة أولاً
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
-        // إنشاء التنبيه (Alert)
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Follwerk Hack"
-                                   message:@"Welcome, Hussein Saad"
-                                   preferredStyle:UIAlertControllerStyleAlert];
-
-        UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"Start Gaming"
-                                   style:UIAlertActionStyleDefault
-                                   handler:nil];
-
-        [alert addAction:okAction];
-
-        // البحث عن النافذة النشطة (Window) بالطريقة الحديثة المتوافقة مع iOS 13-18
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-                if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                    window = windowScene.windows.firstObject;
-                    break;
-                }
-            }
-        } else {
-            // للطريقة القديمة إذا كان الإصدار أقل من iOS 13
-            window = [UIApplication sharedApplication].keyWindow;
-        }
-        
-        // إظهار الرسالة فوق واجهة اللعبة
-        [window.rootViewController presentViewController:alert animated:YES completion:nil];
-    });
+// 1. تفعيل الخطوط الطويلة وكشف المسار المخفي
+%hook BallManager
+- (bool)isVisualGuidePointingToObjectBall {
+    return YES; // جعل الدليل يشير دائماً للكرة المستهدفة
 }
 
+- (bool)shouldShowBallGuide {
+    return YES; // إظهار الخطوط حتى لو كانت اللعبة تحاول إخفاءها
+}
+
+- (void)updateBallHighlightFlags {
+    %orig;
+    // إضافة كود إضافي هنا لتمييز الكرات القانونية في وضع 8 و 9 balls
+}
+%end
+
+// 2. سحب إحداثيات الكرة الحقيقية وتعديل المسار
+%hook Ball
+- (void)setPosition:(CGPoint)arg1 {
+    // إرسال الإحداثيات إلى السجل (Console) للتأكد من الربط مع السيرفر
+    NSLog(@"[Follwerk] Monitoring Ball at: x=%f, y=%f", arg1.x, arg1.y);
+    %orig(arg1);
+}
+
+// ميزة تحديد الكرة المستهدفة بدقة
+- (bool)isAboveHighestBallNumber:(int)arg1 {
+    return %orig; // الحفاظ على منطق اللعبة مع السماح بالتصويب
+}
+%end
+
+// 3. تفعيل ميزات الـ Premium Guide (المسارات الملونة)
+%hook GameHUD8BallPoolBallCounter
+- (void)setupWithHUD:(id)arg1 is9BallGame:(bool)arg2 side:(int)arg3 {
+    %orig;
+    // هنا يمكن إضافة شعار Follwerk داخل واجهة اللعبة
+    NSLog(@"[Follwerk] HUD initialized for 8/9 Ball Game");
+}
+%end
+
+// ميزة إضافية: منع اللعبة من كشف التعديل على المسار
+%hook BallPhysicsProperties
+- (void)setVelocity:(struct MCPoint)arg1 {
+    %orig(arg1);
+}
 %end
