@@ -13,23 +13,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Setup Theos and SDKs
         run: |
-          # تحميل Theos
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          # تحميل الـ SDK (نستخدم نظام iOS 14.5 كمثال مستقر للألعاب)
-          git clone https://github.com/theos/sdks.git ~/theos/sdks
+          # تحميل Theos فقط إذا لم يكن موجوداً
+          if [ ! -d "~/theos" ]; then
+            git clone --recursive https://github.com/theos/theos.git ~/theos
+          fi
+          
+          # تحميل الـ SDKs داخل مجلد Theos الصحيح
+          # سنستخدم حلاً يضمن عدم التكرار
+          mkdir -p ~/theos/sdks
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz -C ~/theos/sdks --strip-components=1
+          
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
       - name: Build Follwerk Package
         run: |
           export THEOS=~/theos
-          # تنفيذ بناء الحزمة الكاملة (deb)
+          # بناء الحزمة بشكل نهائي
           make package FINALPACKAGE=1
         
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: Follwerk-Installer
-          # تعديل المسار ليشمل ملف الـ deb الناتج
           path: packages/*.deb
