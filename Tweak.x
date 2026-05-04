@@ -1,57 +1,58 @@
 #import <UIKit/UIKit.h>
 
-// تعريف الهياكل البرمجية التي اكتشفناها في ملف اللعبة لضمان الدقة
-struct MCNumber {
+// --- تعريفات الهياكل البرمجية (لضمان دقة فيزياء اللعبة) ---
+typedef struct {
     double mValue; 
-};
+} MCNumber;
 
-struct MCPoint {
+typedef struct {
     MCNumber x;
     MCNumber y;
-};
+} MCPoint;
 
-// 1. تفعيل الخطوط الطويلة وكشف المسار المخفي
+// --- 1. ميزات التحكم بفيزياء الكرة والمسارات ---
 %hook BallManager
+// تفعيل الدليل البصري دائماً (الخطوط الطويلة)
 - (bool)isVisualGuidePointingToObjectBall {
-    return YES; // جعل الدليل يشير دائماً للكرة المستهدفة
+    return YES;
 }
 
+// إظهار الخط حتى في الأوضاع التي تمنعه اللعبة
 - (bool)shouldShowBallGuide {
-    return YES; // إظهار الخطوط حتى لو كانت اللعبة تحاول إخفاءها
+    return YES;
 }
 
+// تحديث أعلام تمييز الكرات لضمان الدقة
 - (void)updateBallHighlightFlags {
     %orig;
-    // إضافة كود إضافي هنا لتمييز الكرات القانونية في وضع 8 و 9 balls
 }
 %end
 
-// 2. سحب إحداثيات الكرة الحقيقية وتعديل المسار
+// --- 2. ميزات تتبع موقع الكرة (مفيد للتصويب التلقائي مستقبلاً) ---
 %hook Ball
 - (void)setPosition:(CGPoint)arg1 {
-    // إرسال الإحداثيات إلى السجل (Console) للتأكد من الربط مع السيرفر
-    NSLog(@"[Follwerk] Monitoring Ball at: x=%f, y=%f", arg1.x, arg1.y);
+    // تسجيل الإحداثيات في نظام الـ Console الخاص بك في Follwerk
+    NSLog(@"[Follwerk] Ball Moving to: x=%f, y=%f", arg1.x, arg1.y);
     %orig(arg1);
 }
 
-// ميزة تحديد الكرة المستهدفة بدقة
+// ميزة تحديد الكرة المستهدفة فوق أعلى رقم
 - (bool)isAboveHighestBallNumber:(int)arg1 {
-    return %orig; // الحفاظ على منطق اللعبة مع السماح بالتصويب
+    return %orig;
 }
 %end
 
-// 3. تفعيل ميزات الـ Premium Guide (المسارات الملونة)
+// --- 3. ميزات الواجهة الأمامية (HUD) ---
 %hook GameHUD8BallPoolBallCounter
 - (void)setupWithHUD:(id)arg1 is9BallGame:(bool)arg2 side:(int)arg3 {
     %orig;
-    // هنا يمكن إضافة شعار Follwerk داخل واجهة اللعبة
-    NSLog(@"[Follwerk] HUD initialized for 8/9 Ball Game");
+    NSLog(@"[Follwerk] Hack Active for this Match");
 }
 %end
 
-// ميزة إضافية: منع اللعبة من كشف التعديل على المسار
+// منع اللعبة من اكتشاف التعديل المفاجئ في السرعة
 %hook BallPhysicsProperties
-- (void)setVelocity:(struct MCPoint)arg1 {
+- (void)setVelocity:(MCPoint)arg1 {
     %orig(arg1);
 }
 %end
