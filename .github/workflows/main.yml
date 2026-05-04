@@ -3,30 +3,28 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً أيضاً
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest # استخدام نظام ماك لضمان التوافق مع آبل
+    runs-on: macos-latest
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3 # جلب ملفاتك (Tweak.x و Makefile)
+        uses: actions/checkout@v4 # تم التحديث إلى v4
 
       - name: Setup Theos
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
-          # تجهيز بيئة العمل لبناء الهاك
 
       - name: Build the Hack (dylib)
         run: |
           export THEOS=~/theos
           make FINALPACKAGE=1
-          # تحويل كود C++ إلى ملف dylib متوافق مع arm64
 
       - name: Upload Result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # هذا هو التعديل الأساسي لحل المشكلة
         with:
           name: Hussein-Saad-Hack
-          path: .theos/obj/debug/*.dylib # استخراج الملف الجاهز للتحميل
+          path: .theos/obj/debug/*.dylib
