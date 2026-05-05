@@ -6,20 +6,30 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 # تحديث للإصدار الرابع
+        uses: actions/checkout@v4
 
       - name: Setup Theos
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          # تحميل ذايوس يدوياً لتجنب مشاكل السكريبت التلقائي
+          git clone --recursive https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
+
+      - name: Install iOS SDK
+        run: |
+          # تحميل الـ SDK يدوياً من مستودع موثوق لضمان عدم فشل الـ API
+          mkdir -p ~/theos/sdks
+          curl -LO https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz
+          tar -xf iPhoneOS14.5.sdk.tar.xz -C ~/theos/sdks
+          rm iPhoneOS14.5.sdk.tar.xz
 
       - name: Build Tweak
         run: |
           export THEOS=~/theos
+          # تجميع المشروع وتحويله لملف dylib/deb
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4 # هذا هو التعديل المطلوب لحل الخطأ
+        uses: actions/upload-artifact@v4
         with:
           name: jokdinstagram-package
           path: packages/*.deb
