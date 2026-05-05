@@ -1,49 +1,31 @@
-name: Build jokdinstagram Dylib
+name: Build Jokd Dylib
 on: [push, pull_request]
-
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout Code
-        # جلب ملفات المشروع (Tweak.x و Makefile)
-        uses: actions/checkout@v4
-
-      - name: Install Dependencies
-        # تثبيت أداة ldid لتوقيع ملف الـ dylib برمجياً
-        run: brew install ldid xz
-
+      - uses: actions/checkout@v4
+      - run: brew install ldid
       - name: Setup Theos
-        # إعداد بيئة ذايوس وتحديد المسارات البرمجية
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "$HOME/theos/bin" >> $GITHUB_PATH
-
-      - name: Install iOS SDK
-        # تحميل أدوات النظام (SDK 14.5) لترجمة الكود
+      - name: SDK
         run: |
           mkdir -p ~/theos/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip -q master.zip
           mv sdks-master/iPhoneOS14.5.sdk ~/theos/sdks/
-          rm -rf sdks-master master.zip
-
-      - name: Build Tweak
-        # تجميع الكود المصدري وتحويله إلى مكتبة ديناميكية
+      - name: Build
         run: |
           export THEOS=~/theos
-          make package FINALPACKAGE=1
-
-      - name: Extract Dylib Only
-        # خطوة برمجية للبحث عن الـ dylib الناتج ووضعه في مجلد مستقل
+          make FINALPACKAGE=1
+      - name: Upload
         run: |
-          mkdir -p final_output
-          find .theos/obj/ -name "*.dylib" -exec cp {} final_output/ \;
-
-      - name: Upload Dylib Artifact
-        # رفع ملف الـ dylib فقط ليظهر لك في نتائج GitHub
-        uses: actions/upload-artifact@v4
+          mkdir output
+          find .theos/obj/ -name "*.dylib" -exec cp {} output/ \;
+      - uses: actions/upload-artifact@v4
         with:
-          name: jokdinstagram-dylib-only
-          path: final_output/*.dylib
+          name: jokdinstagram-dylib
+          path: output/*.dylib
