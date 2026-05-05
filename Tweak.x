@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 
+// تعريف الواجهات لتجنب أخطاء التعريف المسبق
 @interface IGHomeViewController : UIViewController
 - (void)openJokdSettings;
 @end
@@ -26,6 +27,7 @@
     [closeButton addTarget:self action:@selector(closeSettings) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:closeButton];
 }
+
 - (void)closeSettings {
     [self dismissViewControllerAnimated:YES completion:nil];
 }
@@ -37,16 +39,20 @@ static UIButton *floatingButton;
 - (void)viewDidLoad {
     %orig;
     
+    // إنشاء الزر العائم
     floatingButton = [UIButton buttonWithType:UIButtonTypeCustom];
     floatingButton.frame = CGRectMake(20, 150, 60, 60);
     floatingButton.backgroundColor = [UIColor systemPurpleColor];
     floatingButton.layer.cornerRadius = 30;
     [floatingButton setTitle:@"Jokd" forState:UIControlStateNormal];
+    floatingButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     [floatingButton addTarget:self action:@selector(openJokdSettings) forControlEvents:UIControlEventTouchUpInside];
     
+    // إضافة ميزة السحب (Pan Gesture)
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleJokdPan:)];
     [floatingButton addGestureRecognizer:pan];
     
+    // الطريقة الحديثة لإضافة الزر على الشاشة بدون keyWindow
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
             if (windowScene.activationState == UISceneActivationStateForegroundActive) {
@@ -72,6 +78,7 @@ static UIButton *floatingButton;
 }
 %end
 
+// هوك الترحيب عند تشغيل التطبيق
 %hook IGAppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(id)options {
     BOOL result = %orig;
@@ -85,8 +92,9 @@ static UIButton *floatingButton;
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://t.me/qmyqq"] options:@{} completionHandler:nil];
         }]];
         
-        [alert addAction:[UIAlertAction actionWithTitle:@"Start" style:UIAlertActionStyleCancel handler:nil]];
+        [alert addAction:[UIAlertAction actionWithTitle:@"دخول" style:UIAlertActionStyleCancel handler:nil]];
         
+        // عرض التنبيه باستخدام الـ Scene النشط
         for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
             if (windowScene.activationState == UISceneActivationStateForegroundActive) {
                 [windowScene.windows.firstObject.rootViewController presentViewController:alert animated:YES completion:nil];
@@ -99,6 +107,7 @@ static UIButton *floatingButton;
 }
 %end
 
+// ميزة إخفاء الإعلانات
 %hook IGFeedItem
 - (BOOL)isSponsored { return NO; }
 %end
