@@ -1,14 +1,16 @@
 #import <UIKit/UIKit.h>
 
-// --- تعريفات الواجهات لضمان عدم وجود أخطاء مترجم ---
-@interface IGMedia : NSObject
-@property (nonatomic, readonly) NSURL *videoConfig; // مثال لتبسيط الوصول للرابط
+// --- 1. تعريف الكلاسات ليعرف المترجم وظائفها ---
+@interface IGHomeViewController : UIViewController
+- (void)openSettings;
 @end
 
 @interface IGDirectVisualMessage : NSObject
+- (BOOL)isExpired;
+- (BOOL)canViewAgain;
 @end
 
-// --- واجهة الإعدادات ---
+// --- 2. واجهة الإعدادات الاحترافية ---
 @interface JokdSettingsViewController : UIViewController <UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, strong) UITableView *tableView;
 @end
@@ -16,44 +18,43 @@
 @implementation JokdSettingsViewController
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor colorWithWhite:0 alpha:0.95];
+    self.view.backgroundColor = [UIColor colorWithWhite:0.05 alpha:0.95];
     
-    UILabel *header = [[UILabel alloc] initWithFrame:CGRectMake(0, 50, self.view.frame.size.width, 50)];
+    UILabel *header = [[UILabel alloc] initWithFrame:CGRectMake(0, 50, self.view.frame.size.width, 40)];
     header.text = @"إعدادات JokdInstagram";
     header.textColor = [UIColor whiteColor];
     header.textAlignment = NSTextAlignmentCenter;
-    header.font = [UIFont boldSystemFontOfSize:22];
+    header.font = [UIFont boldSystemFontOfSize:20];
     [self.view addSubview:header];
 
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 110, self.view.frame.size.width, self.view.frame.size.height - 220)];
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 100, self.view.frame.size.width, self.view.frame.size.height - 200)];
+    self.tableView.delegate = self;
     self.tableView.dataSource = self;
     self.tableView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.tableView];
 
-    UIButton *exitBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, self.view.frame.size.height - 80, self.view.frame.size.width - 40, 50)];
-    exitBtn.backgroundColor = [UIColor systemRedColor];
-    exitBtn.layer.cornerRadius = 12;
-    [exitBtn setTitle:@"إغلاق" forState:UIControlStateNormal];
-    [exitBtn addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:exitBtn];
+    UIButton *closeBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, self.view.frame.size.height - 80, self.view.frame.size.width - 40, 50)];
+    closeBtn.backgroundColor = [UIColor systemPurpleColor];
+    closeBtn.layer.cornerRadius = 15;
+    [closeBtn setTitle:@"إغلاق" forState:UIControlStateNormal];
+    [closeBtn addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:closeBtn];
 }
 - (void)dismiss { [self dismissViewControllerAnimated:YES completion:nil]; }
-- (NSInteger)tableView:(UITableView *)tv numberOfRowsInSection:(NSInteger)s { return 5; }
+- (NSInteger)tableView:(UITableView *)tv numberOfRowsInSection:(NSInteger)s { return 4; }
 - (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)ip {
     UITableViewCell *c = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"c"];
     c.backgroundColor = [UIColor clearColor];
     c.textLabel.textColor = [UIColor whiteColor];
-    NSArray *titles = @[@"حفظ الوسائط تلقائياً", @"مشاهدة الرسائل المؤقتة بلا حدود", @"إخفاء الإعلانات", @"حفظ الستوري", @"تعطيل جاري الكتابة"];
+    NSArray *titles = @[@"رؤية الرسائل المؤقتة", @"إخفاء الإعلانات", @"تعطيل جاري الكتابة", @"تفعيل زر التحميل"];
     c.textLabel.text = titles[ip.row];
-    UISwitch *sith = [[UISwitch alloc] init];
-    [sith setOn:YES];
-    c.accessoryView = sith;
+    UISwitch *sw = [[UISwitch alloc] init]; [sw setOn:YES];
+    c.accessoryView = sw;
     return c;
 }
 @end
 
-// --- الهوكات الأساسية ---
-
+// --- 3. الهوكات الأساسية وحل مشكلة الكراش ---
 static UIButton *jokdBtn;
 
 %hook IGHomeViewController
@@ -61,9 +62,9 @@ static UIButton *jokdBtn;
     %orig;
     if (!jokdBtn) {
         jokdBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        jokdBtn.frame = CGRectMake(20, 120, 55, 55);
+        jokdBtn.frame = CGRectMake(30, 150, 60, 60);
         jokdBtn.backgroundColor = [UIColor systemPurpleColor];
-        jokdBtn.layer.cornerRadius = 27.5;
+        jokdBtn.layer.cornerRadius = 30;
         [jokdBtn setTitle:@"Jokd" forState:UIControlStateNormal];
         [jokdBtn addTarget:self action:@selector(openSettings) forControlEvents:UIControlEventTouchUpInside];
         
@@ -71,13 +72,12 @@ static UIButton *jokdBtn;
         [jokdBtn addGestureRecognizer:p];
     }
     
-    // إضافة الزر بأمان للـ Window الرئيسي
+    // إضافة الزر للنافذة بأمان
     dispatch_async(dispatch_get_main_queue(), ^{
         UIWindow *win = nil;
         for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes) {
             if (s.activationState == UISceneActivationStateForegroundActive) {
-                win = s.windows.firstObject;
-                break;
+                win = s.windows.firstObject; break;
             }
         }
         if (win && ![win.subviews containsObject:jokdBtn]) {
@@ -90,6 +90,7 @@ static UIButton *jokdBtn;
 - (void)openSettings {
     JokdSettingsViewController *svc = [[JokdSettingsViewController alloc] init];
     svc.modalPresentationStyle = UIModalPresentationFullScreen;
+    // تم حل الخطأ هنا عبر تعريف IGHomeViewController كـ UIViewController في البداية
     [self presentViewController:svc animated:YES completion:nil];
 }
 
@@ -101,38 +102,12 @@ static UIButton *jokdBtn;
 }
 %end
 
-// --- ميزة رؤية الرسائل المؤقتة بلا حدود ---
+// --- 4. ميزات الخصوصية ومنع الإعلانات ---
 %hook IGDirectVisualMessage
-- (BOOL)isExpired {
-    return NO; // الرسالة لن تنتهي أبداً وتستطيع رؤيتها دائماً
-}
-- (BOOL)canViewAgain {
-    return YES; // السماح بإعادة الرؤية
-}
+- (BOOL)isExpired { return NO; }
+- (BOOL)canViewAgain { return YES; }
 %end
 
-// --- ميزة منع الإعلانات ---
 %hook IGFeedItem
 - (BOOL)isSponsored { return NO; }
-%end
-
-// --- الترحيب الآمن ---
-%hook IGAppDelegate
-- (BOOL)application:(UIApplication *)app didFinishLaunchingWithOptions:(id)opt {
-    BOOL r = %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"JokdInstagram" 
-            message:@"مرحباً بك حسين سعد\nالنسخة تعمل الآن بدون جيلبريك" preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"Start" style:UIAlertActionStyleCancel handler:nil]];
-        
-        UIWindow *keyWin = nil;
-        for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes) {
-            if (s.activationState == UISceneActivationStateForegroundActive) {
-                keyWin = s.windows.firstObject; break;
-            }
-        }
-        [keyWin.rootViewController presentViewController:alert animated:YES completion:nil];
-    });
-    return r;
-}
 %end
