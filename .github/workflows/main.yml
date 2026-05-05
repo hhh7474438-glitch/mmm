@@ -8,30 +8,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Dependencies
+        run: |
+          # تثبيت الأدوات اللازمة لعملية التوقيع والضغط
+          brew install ldid xz
+
       - name: Setup Theos
         run: |
-          # تحميل بيئة ذايوس يدوياً لضمان الاستقرار
+          # تحميل إطار عمل ذايوس
           git clone --recursive https://github.com/theos/theos.git ~/theos
+          # إعداد المتغيرات البيئية لـ GitHub Actions
           echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "~/theos/bin" >> $GITHUB_PATH
 
       - name: Install iOS SDK
         run: |
-          # تحميل الـ SDK مباشرة وفك ضغطها في المسار الصحيح
+          # إنشاء مجلد الـ SDK وتحميل الملفات
           mkdir -p ~/theos/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip -q master.zip
-          # نقل الـ SDK المطلوبة (إصدار 14.5) إلى مجلد ذايوس
+          # نقل إصدار SDK 14.5 المخصص لتطوير التويكات
           mv sdks-master/iPhoneOS14.5.sdk ~/theos/sdks/
           rm -rf sdks-master master.zip
 
       - name: Build Tweak
         run: |
+          # استخدام متغير THEOS الذي تم إعداده سابقاً
           export THEOS=~/theos
-          # تجميع الكود لإنتاج حزمة deb تحتوي على الدايلب
+          # تنفيذ عملية البناء لإنتاج حزمة .deb النهائية
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: jokdinstagram-package
+          # تأكد أن المسار يطابق المجلد الذي ينتجه Theos
           path: packages/*.deb
