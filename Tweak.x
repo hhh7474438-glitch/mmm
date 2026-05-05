@@ -1,63 +1,87 @@
 #import <UIKit/UIKit.h>
 
-// تعريف الواجهات لتجنب أخطاء التعريف المسبق
+// --- تعريف الواجهات (Interfaces) ---
 @interface IGHomeViewController : UIViewController
 - (void)openJokdSettings;
 @end
 
-@interface JokdSettingsViewController : UIViewController
+@interface JokdSettingsViewController : UIViewController <UITableViewDelegate, UITableViewDataSource>
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) NSArray *features;
 @end
 
+// --- تنفيذ واجهة الإعدادات ---
 @implementation JokdSettingsViewController
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithWhite:0 alpha:0.95];
     
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 60, self.view.frame.size.width, 40)];
-    titleLabel.text = @"إعدادات jokdinstagram";
-    titleLabel.textColor = [UIColor whiteColor];
-    titleLabel.font = [UIFont boldSystemFontOfSize:20];
-    titleLabel.textAlignment = NSTextAlignmentCenter;
-    [self.view addSubview:titleLabel];
+    self.features = @[
+        @"تحميل الفيديوهات والصور", @"حفظ فيديوهات الـ Direct", 
+        @"مشاهدة الستوري بالخفاء", @"إخفاء جاري الكتابة", 
+        @"تعطيل إيصالات القراءة", @"إزالة الإعلانات", 
+        @"نسخ البايو والتعليقات", @"إظهار حالة المتابعة"
+    ];
 
-    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeButton.frame = CGRectMake((self.view.frame.size.width - 120) / 2, self.view.frame.size.height - 100, 120, 50);
-    [closeButton setTitle:@"إغلاق القائمة" forState:UIControlStateNormal];
-    [closeButton setTitleColor:[UIColor systemRedColor] forState:UIControlStateNormal];
-    [closeButton addTarget:self action:@selector(closeSettings) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:closeButton];
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 50, self.view.frame.size.width, 40)];
+    title.text = @"إعدادات JokdInstagram";
+    title.textColor = [UIColor whiteColor];
+    title.textAlignment = NSTextAlignmentCenter;
+    title.font = [UIFont boldSystemFontOfSize:22];
+    [self.view addSubview:title];
+
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 100, self.view.frame.size.width, self.view.frame.size.height - 200)];
+    self.tableView.backgroundColor = [UIColor clearColor];
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    [self.view addSubview:self.tableView];
+
+    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
+    closeBtn.frame = CGRectMake(20, self.view.frame.size.height - 80, self.view.frame.size.width - 40, 50);
+    closeBtn.backgroundColor = [UIColor systemRedColor];
+    [closeBtn setTitle:@"إغلاق الإعدادات" forState:UIControlStateNormal];
+    [closeBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    closeBtn.layer.cornerRadius = 15;
+    [closeBtn addTarget:self action:@selector(close) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:closeBtn];
 }
 
-- (void)closeSettings {
-    [self dismissViewControllerAnimated:YES completion:nil];
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return self.features.count; }
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
+    cell.backgroundColor = [UIColor clearColor];
+    cell.textLabel.text = self.features[indexPath.row];
+    cell.textLabel.textColor = [UIColor whiteColor];
+    UISwitch *sw = [[UISwitch alloc] init];
+    cell.accessoryView = sw;
+    return cell;
 }
+
+- (void)close { [self dismissViewControllerAnimated:YES completion:nil]; }
 @end
 
-static UIButton *floatingButton;
+// --- الهوكات (Hooks) ---
+
+static UIButton *jokdButton;
 
 %hook IGHomeViewController
 - (void)viewDidLoad {
     %orig;
+    jokdButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    jokdButton.frame = CGRectMake(20, 100, 60, 60);
+    jokdButton.backgroundColor = [UIColor systemPurpleColor];
+    jokdButton.layer.cornerRadius = 30;
+    [jokdButton setTitle:@"Jokd" forState:UIControlStateNormal];
+    [jokdButton addTarget:self action:@selector(openJokdSettings) forControlEvents:UIControlEventTouchUpInside];
     
-    // إنشاء الزر العائم
-    floatingButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    floatingButton.frame = CGRectMake(20, 150, 60, 60);
-    floatingButton.backgroundColor = [UIColor systemPurpleColor];
-    floatingButton.layer.cornerRadius = 30;
-    [floatingButton setTitle:@"Jokd" forState:UIControlStateNormal];
-    floatingButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
-    [floatingButton addTarget:self action:@selector(openJokdSettings) forControlEvents:UIControlEventTouchUpInside];
-    
-    // إضافة ميزة السحب (Pan Gesture)
-    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleJokdPan:)];
-    [floatingButton addGestureRecognizer:pan];
-    
-    // الطريقة الحديثة لإضافة الزر على الشاشة بدون keyWindow
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                [windowScene.windows.firstObject addSubview:floatingButton];
-                break;
+    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleJPan:)];
+    [jokdButton addGestureRecognizer:pan];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                [scene.windows.firstObject addSubview:jokdButton];
             }
         }
     });
@@ -65,49 +89,41 @@ static UIButton *floatingButton;
 
 %new
 - (void)openJokdSettings {
-    JokdSettingsViewController *settingsVC = [[JokdSettingsViewController alloc] init];
-    settingsVC.modalPresentationStyle = UIModalPresentationFullScreen;
-    [self presentViewController:settingsVC animated:YES completion:nil];
+    JokdSettingsViewController *vc = [[JokdSettingsViewController alloc] init];
+    [self presentViewController:vc animated:YES completion:nil];
 }
 
 %new
-- (void)handleJokdPan:(UIPanGestureRecognizer *)sender {
-    CGPoint translation = [sender translationInView:sender.view.superview];
-    sender.view.center = CGPointMake(sender.view.center.x + translation.x, sender.view.center.y + translation.y);
-    [sender setTranslation:CGPointZero inView:sender.view.superview];
+- (void)handleJPan:(UIPanGestureRecognizer *)p {
+    CGPoint t = [p translationInView:p.view.superview];
+    p.view.center = CGPointMake(p.view.center.x + t.x, p.view.center.y + t.y);
+    [p setTranslation:CGPointZero inView:p.view.superview];
 }
 %end
 
-// هوك الترحيب عند تشغيل التطبيق
-%hook IGAppDelegate
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(id)options {
-    BOOL result = %orig;
-    
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"مرحبا بك"
-            message:@"نسخة jokdinstagram\nبواسطة حسين سعد"
-            preferredStyle:UIAlertControllerStyleAlert];
+// إخفاء الإعلانات
+%hook IGFeedItem
+- (BOOL)isSponsored { return NO; }
+%end
 
-        [alert addAction:[UIAlertAction actionWithTitle:@"TELEgram" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+// رسالة الترحيب
+%hook IGAppDelegate
+- (BOOL)application:(UIApplication *)app didFinishLaunchingWithOptions:(id)opt {
+    BOOL r = %orig;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        UIAlertController *a = [UIAlertController alertControllerWithTitle:@"مرحباً بك" 
+            message:@"نسخة jokdinstagram\nمطورة بواسطة Hussein Saad" preferredStyle:UIAlertControllerStyleAlert];
+        [a addAction:[UIAlertAction actionWithTitle:@"TELEgram" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://t.me/qmyqq"] options:@{} completionHandler:nil];
         }]];
+        [a addAction:[UIAlertAction actionWithTitle:@"Start" style:UIAlertActionStyleCancel handler:nil]];
         
-        [alert addAction:[UIAlertAction actionWithTitle:@"دخول" style:UIAlertActionStyleCancel handler:nil]];
-        
-        // عرض التنبيه باستخدام الـ Scene النشط
-        for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                [windowScene.windows.firstObject.rootViewController presentViewController:alert animated:YES completion:nil];
-                break;
+        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                [scene.windows.firstObject.rootViewController presentViewController:a animated:YES completion:nil];
             }
         }
     });
-    
-    return result;
+    return r;
 }
-%end
-
-// ميزة إخفاء الإعلانات
-%hook IGFeedItem
-- (BOOL)isSponsored { return NO; }
 %end
