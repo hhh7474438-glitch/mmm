@@ -1,6 +1,5 @@
 #import <UIKit/UIKit.h>
 
-// تعريف الواجهات لتجنب خطأ الـ Forward Declaration
 @interface IGHomeViewController : UIViewController
 - (void)openJokdSettings;
 @end
@@ -27,13 +26,11 @@
     [closeButton addTarget:self action:@selector(closeSettings) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:closeButton];
 }
-
 - (void)closeSettings {
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 @end
 
-// زر عائم محسن
 static UIButton *floatingButton;
 
 %hook IGHomeViewController
@@ -45,26 +42,18 @@ static UIButton *floatingButton;
     floatingButton.backgroundColor = [UIColor systemPurpleColor];
     floatingButton.layer.cornerRadius = 30;
     [floatingButton setTitle:@"Jokd" forState:UIControlStateNormal];
-    floatingButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
     [floatingButton addTarget:self action:@selector(openJokdSettings) forControlEvents:UIControlEventTouchUpInside];
     
-    // التحريك
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleJokdPan:)];
     [floatingButton addGestureRecognizer:pan];
     
-    // الحل البديل لـ keyWindow المتوقف
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-                if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                    window = windowScene.windows.firstObject;
-                    break;
-                }
+        for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
+            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
+                [windowScene.windows.firstObject addSubview:floatingButton];
+                break;
             }
         }
-        if (!window) window = [UIApplication sharedApplication].keyWindow;
-        [window addSubview:floatingButton];
     });
 }
 
@@ -83,7 +72,6 @@ static UIButton *floatingButton;
 }
 %end
 
-// هوك الترحيب المعدل
 %hook IGAppDelegate
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(id)options {
     BOOL result = %orig;
@@ -99,25 +87,18 @@ static UIButton *floatingButton;
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Start" style:UIAlertActionStyleCancel handler:nil]];
         
-        // عرض التنبيه بطريقة متوافقة مع iOS 13+
-        UIViewController *rootVC = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-                if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                    rootVC = windowScene.windows.firstObject.rootViewController;
-                    break;
-                }
+        for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
+            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
+                [windowScene.windows.firstObject.rootViewController presentViewController:alert animated:YES completion:nil];
+                break;
             }
         }
-        if (!rootVC) rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-        [rootVC presentViewController:alert animated:YES completion:nil];
     });
     
     return result;
 }
 %end
 
-// ميزات الخصوصية والحساب (تعمل في الخلفية)
 %hook IGFeedItem
 - (BOOL)isSponsored { return NO; }
 %end
