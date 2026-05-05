@@ -1,46 +1,25 @@
-name: Follwerk Build System
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+name: Build jokdinstagram
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: macos-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Setup Dependencies (ldid)
+      - name: Setup Theos
         run: |
-          # تثبيت أدوات التوقيع اللازمة لملفات iOS
-          brew install ldid xz
-
-      - name: Setup Theos and SDKs
-        run: |
-          # تحميل بيئة Theos والـ SDKs الخاصة بآبل
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          mkdir -p ~/theos/sdks
-          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz -C ~/theos/sdks --strip-components=1
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build Follwerk Dylib
+      - name: Build Tweak
         run: |
           export THEOS=~/theos
-          # بناء المشروع وتحويل الكود إلى ملف dylib نهائي
-          make FINALPACKAGE=1
-        
-      - name: Prepare Final Package
-        run: |
-          # إنشاء مجلد يجمع الـ dylib وملفات المشروع للتحميل
-          mkdir -p output
-          cp .theos/obj/Follwerk.dylib output/ 2>/dev/null || cp .theos/obj/arm64/Follwerk.dylib output/
-          cp Makefile Tweak.x control output/
+          make package FINALPACKAGE=1
           
-      - name: Upload Project and Dylib
-        uses: actions/upload-artifact@v4
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: Follwerk-Full-Project
-          path: output/
+          name: jokdinstagram-dylib
+          path: packages/*.deb
