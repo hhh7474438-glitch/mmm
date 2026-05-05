@@ -6,7 +6,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # تحديث للإصدار الرابع
 
       - name: Setup Theos
         run: |
@@ -19,7 +19,7 @@ jobs:
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # هذا هو التعديل المطلوب لحل الخطأ
         with:
-          name: jokdinstagram-dylib
+          name: jokdinstagram-package
           path: packages/*.deb
