@@ -1,128 +1,137 @@
 #import <UIKit/UIKit.h>
 
-// --- تعريف الواجهات (Interfaces) ---
-@interface IGHomeViewController : UIViewController
-- (void)openJokdSettings;
+// --- تعريفات الواجهات لضمان عدم وجود أخطاء مترجم ---
+@interface IGMedia : NSObject
+@property (nonatomic, readonly) NSURL *videoConfig; // مثال لتبسيط الوصول للرابط
 @end
 
+@interface IGDirectVisualMessage : NSObject
+@end
+
+// --- واجهة الإعدادات ---
 @interface JokdSettingsViewController : UIViewController <UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, strong) UITableView *tableView;
-@property (nonatomic, strong) NSArray *features;
 @end
 
-// --- تنفيذ واجهة الإعدادات ---
 @implementation JokdSettingsViewController
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithWhite:0 alpha:0.95];
     
-    self.features = @[
-        @"تحميل الفيديوهات والصور", @"حفظ فيديوهات الـ Direct", 
-        @"مشاهدة الستوري بالخفاء", @"إخفاء جاري الكتابة", 
-        @"تعطيل إيصالات القراءة", @"إزالة الإعلانات", 
-        @"نسخ البايو والتعليقات", @"إظهار حالة المتابعة"
-    ];
+    UILabel *header = [[UILabel alloc] initWithFrame:CGRectMake(0, 50, self.view.frame.size.width, 50)];
+    header.text = @"إعدادات JokdInstagram";
+    header.textColor = [UIColor whiteColor];
+    header.textAlignment = NSTextAlignmentCenter;
+    header.font = [UIFont boldSystemFontOfSize:22];
+    [self.view addSubview:header];
 
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(0, 50, self.view.frame.size.width, 40)];
-    title.text = @"إعدادات JokdInstagram";
-    title.textColor = [UIColor whiteColor];
-    title.textAlignment = NSTextAlignmentCenter;
-    title.font = [UIFont boldSystemFontOfSize:22];
-    [self.view addSubview:title];
-
-    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 100, self.view.frame.size.width, self.view.frame.size.height - 200)];
-    self.tableView.backgroundColor = [UIColor clearColor];
-    self.tableView.delegate = self;
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 110, self.view.frame.size.width, self.view.frame.size.height - 220)];
     self.tableView.dataSource = self;
+    self.tableView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.tableView];
 
-    UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeBtn.frame = CGRectMake(20, self.view.frame.size.height - 80, self.view.frame.size.width - 40, 50);
-    closeBtn.backgroundColor = [UIColor systemRedColor];
-    [closeBtn setTitle:@"إغلاق الإعدادات" forState:UIControlStateNormal];
-    [closeBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    closeBtn.layer.cornerRadius = 15;
-    [closeBtn addTarget:self action:@selector(close) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:closeBtn];
+    UIButton *exitBtn = [[UIButton alloc] initWithFrame:CGRectMake(20, self.view.frame.size.height - 80, self.view.frame.size.width - 40, 50)];
+    exitBtn.backgroundColor = [UIColor systemRedColor];
+    exitBtn.layer.cornerRadius = 12;
+    [exitBtn setTitle:@"إغلاق" forState:UIControlStateNormal];
+    [exitBtn addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:exitBtn];
 }
-
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return self.features.count; }
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
-    cell.backgroundColor = [UIColor clearColor];
-    cell.textLabel.text = self.features[indexPath.row];
-    cell.textLabel.textColor = [UIColor whiteColor];
-    UISwitch *sw = [[UISwitch alloc] init];
-    cell.accessoryView = sw;
-    return cell;
+- (void)dismiss { [self dismissViewControllerAnimated:YES completion:nil]; }
+- (NSInteger)tableView:(UITableView *)tv numberOfRowsInSection:(NSInteger)s { return 5; }
+- (UITableViewCell *)tableView:(UITableView *)tv cellForRowAtIndexPath:(NSIndexPath *)ip {
+    UITableViewCell *c = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"c"];
+    c.backgroundColor = [UIColor clearColor];
+    c.textLabel.textColor = [UIColor whiteColor];
+    NSArray *titles = @[@"حفظ الوسائط تلقائياً", @"مشاهدة الرسائل المؤقتة بلا حدود", @"إخفاء الإعلانات", @"حفظ الستوري", @"تعطيل جاري الكتابة"];
+    c.textLabel.text = titles[ip.row];
+    UISwitch *sith = [[UISwitch alloc] init];
+    [sith setOn:YES];
+    c.accessoryView = sith;
+    return c;
 }
-
-- (void)close { [self dismissViewControllerAnimated:YES completion:nil]; }
 @end
 
-// --- الهوكات (Hooks) ---
+// --- الهوكات الأساسية ---
 
-static UIButton *jokdButton;
+static UIButton *jokdBtn;
 
 %hook IGHomeViewController
-- (void)viewDidLoad {
+- (void)viewDidAppear:(BOOL)animated {
     %orig;
-    jokdButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    jokdButton.frame = CGRectMake(20, 100, 60, 60);
-    jokdButton.backgroundColor = [UIColor systemPurpleColor];
-    jokdButton.layer.cornerRadius = 30;
-    [jokdButton setTitle:@"Jokd" forState:UIControlStateNormal];
-    [jokdButton addTarget:self action:@selector(openJokdSettings) forControlEvents:UIControlEventTouchUpInside];
+    if (!jokdBtn) {
+        jokdBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        jokdBtn.frame = CGRectMake(20, 120, 55, 55);
+        jokdBtn.backgroundColor = [UIColor systemPurpleColor];
+        jokdBtn.layer.cornerRadius = 27.5;
+        [jokdBtn setTitle:@"Jokd" forState:UIControlStateNormal];
+        [jokdBtn addTarget:self action:@selector(openSettings) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIPanGestureRecognizer *p = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(drag:)];
+        [jokdBtn addGestureRecognizer:p];
+    }
     
-    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleJPan:)];
-    [jokdButton addGestureRecognizer:pan];
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                [scene.windows.firstObject addSubview:jokdButton];
+    // إضافة الزر بأمان للـ Window الرئيسي
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *win = nil;
+        for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes) {
+            if (s.activationState == UISceneActivationStateForegroundActive) {
+                win = s.windows.firstObject;
+                break;
             }
+        }
+        if (win && ![win.subviews containsObject:jokdBtn]) {
+            [win addSubview:jokdBtn];
         }
     });
 }
 
 %new
-- (void)openJokdSettings {
-    JokdSettingsViewController *vc = [[JokdSettingsViewController alloc] init];
-    [self presentViewController:vc animated:YES completion:nil];
+- (void)openSettings {
+    JokdSettingsViewController *svc = [[JokdSettingsViewController alloc] init];
+    svc.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewController:svc animated:YES completion:nil];
 }
 
 %new
-- (void)handleJPan:(UIPanGestureRecognizer *)p {
-    CGPoint t = [p translationInView:p.view.superview];
-    p.view.center = CGPointMake(p.view.center.x + t.x, p.view.center.y + t.y);
-    [p setTranslation:CGPointZero inView:p.view.superview];
+- (void)drag:(UIPanGestureRecognizer *)g {
+    CGPoint t = [g translationInView:g.view.superview];
+    g.view.center = CGPointMake(g.view.center.x + t.x, g.view.center.y + t.y);
+    [g setTranslation:CGPointZero inView:g.view.superview];
 }
 %end
 
-// إخفاء الإعلانات
+// --- ميزة رؤية الرسائل المؤقتة بلا حدود ---
+%hook IGDirectVisualMessage
+- (BOOL)isExpired {
+    return NO; // الرسالة لن تنتهي أبداً وتستطيع رؤيتها دائماً
+}
+- (BOOL)canViewAgain {
+    return YES; // السماح بإعادة الرؤية
+}
+%end
+
+// --- ميزة منع الإعلانات ---
 %hook IGFeedItem
 - (BOOL)isSponsored { return NO; }
 %end
 
-// رسالة الترحيب
+// --- الترحيب الآمن ---
 %hook IGAppDelegate
 - (BOOL)application:(UIApplication *)app didFinishLaunchingWithOptions:(id)opt {
     BOOL r = %orig;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        UIAlertController *a = [UIAlertController alertControllerWithTitle:@"مرحباً بك" 
-            message:@"نسخة jokdinstagram\nمطورة بواسطة Hussein Saad" preferredStyle:UIAlertControllerStyleAlert];
-        [a addAction:[UIAlertAction actionWithTitle:@"TELEgram" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://t.me/qmyqq"] options:@{} completionHandler:nil];
-        }]];
-        [a addAction:[UIAlertAction actionWithTitle:@"Start" style:UIAlertActionStyleCancel handler:nil]];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"JokdInstagram" 
+            message:@"مرحباً بك حسين سعد\nالنسخة تعمل الآن بدون جيلبريك" preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"Start" style:UIAlertActionStyleCancel handler:nil]];
         
-        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                [scene.windows.firstObject.rootViewController presentViewController:a animated:YES completion:nil];
+        UIWindow *keyWin = nil;
+        for (UIWindowScene* s in [UIApplication sharedApplication].connectedScenes) {
+            if (s.activationState == UISceneActivationStateForegroundActive) {
+                keyWin = s.windows.firstObject; break;
             }
         }
+        [keyWin.rootViewController presentViewController:alert animated:YES completion:nil];
     });
     return r;
 }
