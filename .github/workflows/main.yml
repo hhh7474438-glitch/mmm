@@ -15,12 +15,12 @@ jobs:
 
       - name: Setup Dependencies (ldid)
         run: |
-          # تثبيت أداة التوقيع ldid و xz اللازمة
+          # تثبيت أدوات التوقيع اللازمة لملفات iOS
           brew install ldid xz
 
       - name: Setup Theos and SDKs
         run: |
-          # تحميل Theos والـ SDKs
+          # تحميل بيئة Theos والـ SDKs الخاصة بآبل
           git clone --recursive https://github.com/theos/theos.git ~/theos
           mkdir -p ~/theos/sdks
           curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz -C ~/theos/sdks --strip-components=1
@@ -29,15 +29,18 @@ jobs:
       - name: Build Follwerk Dylib
         run: |
           export THEOS=~/theos
-          # بناء المشروع
+          # بناء المشروع وتحويل الكود إلى ملف dylib نهائي
           make FINALPACKAGE=1
         
-      - name: Upload Dylib for IPA Injection
+      - name: Prepare Final Package
+        run: |
+          # إنشاء مجلد يجمع الـ dylib وملفات المشروع للتحميل
+          mkdir -p output
+          cp .theos/obj/Follwerk.dylib output/ 2>/dev/null || cp .theos/obj/arm64/Follwerk.dylib output/
+          cp Makefile Tweak.x control output/
+          
+      - name: Upload Project and Dylib
         uses: actions/upload-artifact@v4
         with:
-          name: Follwerk-Final-Files
-          path: |
-            .theos/obj/Follwerk.dylib
-            .theos/obj/arm64/Follwerk.dylib
-            .theos/obj/arm64e/Follwerk.dylib
-            packages/*.deb
+          name: Follwerk-Full-Project
+          path: output/
