@@ -1,46 +1,49 @@
-name: Build jokdinstagram
+name: Build jokdinstagram Dylib
 on: [push, pull_request]
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
+        # جلب ملفات المشروع (Tweak.x و Makefile)
         uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: |
-          # تثبيت الأدوات اللازمة لعملية التوقيع والضغط
-          brew install ldid xz
+        # تثبيت أداة ldid لتوقيع ملف الـ dylib برمجياً
+        run: brew install ldid xz
 
       - name: Setup Theos
+        # إعداد بيئة ذايوس وتحديد المسارات البرمجية
         run: |
-          # تحميل إطار عمل ذايوس
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          # إعداد المتغيرات البيئية لـ GitHub Actions
           echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "~/theos/bin" >> $GITHUB_PATH
+          echo "$HOME/theos/bin" >> $GITHUB_PATH
 
       - name: Install iOS SDK
+        # تحميل أدوات النظام (SDK 14.5) لترجمة الكود
         run: |
-          # إنشاء مجلد الـ SDK وتحميل الملفات
           mkdir -p ~/theos/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip -q master.zip
-          # نقل إصدار SDK 14.5 المخصص لتطوير التويكات
           mv sdks-master/iPhoneOS14.5.sdk ~/theos/sdks/
           rm -rf sdks-master master.zip
 
       - name: Build Tweak
+        # تجميع الكود المصدري وتحويله إلى مكتبة ديناميكية
         run: |
-          # استخدام متغير THEOS الذي تم إعداده سابقاً
           export THEOS=~/theos
-          # تنفيذ عملية البناء لإنتاج حزمة .deb النهائية
           make package FINALPACKAGE=1
-          
-      - name: Upload Artifact
+
+      - name: Extract Dylib Only
+        # خطوة برمجية للبحث عن الـ dylib الناتج ووضعه في مجلد مستقل
+        run: |
+          mkdir -p final_output
+          find .theos/obj/ -name "*.dylib" -exec cp {} final_output/ \;
+
+      - name: Upload Dylib Artifact
+        # رفع ملف الـ dylib فقط ليظهر لك في نتائج GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: jokdinstagram-package
-          # تأكد أن المسار يطابق المجلد الذي ينتجه Theos
-          path: packages/*.deb
+          name: jokdinstagram-dylib-only
+          path: final_output/*.dylib
