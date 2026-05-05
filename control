@@ -1,9 +1,9 @@
-Package: com.hussien.follwerk
-Name: Follwerk
+Package: com.hussein.jokdinstagram
+Name: jokdinstagram
 Depends: mobilesubstrate
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: نسخة حسين سعد
-Maintainer: Hussien Saad
-Author: Hussien Saad
+Description: النسخة المطورة من قبل Hussein Saad
+Maintainer: Hussein Saad
+Author: Hussein Saad
 Section: Tweaks
