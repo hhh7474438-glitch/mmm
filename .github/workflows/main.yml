@@ -7,6 +7,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Dependencies
+        run: |
+          brew install ldid
+          # التأكد من أن ldid متاح للنظام
+          ln -s /usr/local/bin/ldid /usr/local/bin/sign
+          
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
@@ -24,11 +30,15 @@ jobs:
       - name: Build Tweak
         run: |
           export THEOS=~/theos
-          make FINALPACKAGE=1
+          # تخطي التوقيع داخل Theos لأننا سنقوم به يدوياً لاحقاً أو عبر Sideloadly
+          make FINALPACKAGE=1 CODESIGN_IPA=0 
+        env:
+          THEOS: ~/theos
 
       - name: Prepare Artifacts
         run: |
           mkdir -p output
+          # البحث عن ملف dylib الناتج ونقله
           find .theos/obj/ -name "*.dylib" -exec cp {} output/ \;
 
       - name: Upload Dylib
