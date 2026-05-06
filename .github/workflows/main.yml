@@ -1,47 +1,58 @@
 name: Build Hussain Dylib
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من واجهة غيت هاب
 
 jobs:
   build:
     runs-on: macos-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
           brew install ldid
-          # التأكد من أن ldid متاح للنظام
-          ln -s /usr/local/bin/ldid /usr/local/bin/sign
-          
+          # توفير الأدوات الأساسية للبناء
+          echo "Installing dependencies..."
+
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "$HOME/theos/bin" >> $GITHUB_PATH
+          echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Install SDK
+      - name: Install iOS SDK
         run: |
+          # تنزيل SDK محدد لضمان توافق المكتبات
           mkdir -p ~/theos/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip -q master.zip
           mv sdks-master/*.sdk ~/theos/sdks/
           rm -rf master.zip sdks-master
 
-      - name: Build Tweak
+      - name: Build Tweak (Dylib)
         run: |
           export THEOS=~/theos
-          # تخطي التوقيع داخل Theos لأننا سنقوم به يدوياً لاحقاً أو عبر Sideloadly
-          make FINALPACKAGE=1 CODESIGN_IPA=0 
+          # تنظيف الملفات القديمة وبناء الحزمة النهائية
+          make clean
+          make FINALPACKAGE=1
         env:
           THEOS: ~/theos
 
       - name: Prepare Artifacts
         run: |
           mkdir -p output
-          # البحث عن ملف dylib الناتج ونقله
+          # البحث عن ملف الـ dylib الناتج ونقله للمجلد النهائي
+          # غالباً المسار يكون داخل .theos/obj/debug أو .theos/obj/
           find .theos/obj/ -name "*.dylib" -exec cp {} output/ \;
-
-      - name: Upload Dylib
+          
+      - name: Upload Hussain Dylib
         uses: actions/upload-artifact@v4
         with:
           name: Hussain-Edition-Dylib
