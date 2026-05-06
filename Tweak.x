@@ -1,45 +1,70 @@
 #import <UIKit/UIKit.h>
 
-// كود لزيادة عدد الحسابات - سليم جداً
+// --- زيادة عدد الحسابات ---
 %hook UserConfig
 - (int)maxAccountCount {
-    return 999;
+    return 1000; // عدد ضخم واحترافي
 }
 %end
 
+// --- التحكم في واجهة التطبيق ---
 %hook AppDelegate
+
 - (void)applicationDidBecomeActive:(id)application {
     %orig;
 
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        // تأخير لمدة ثانية واحدة لضمان استقرار الواجهة ومنع كراش الساند بوكس
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // تأخير بسيط لضمان استقرار التطبيق بعد التشغيل
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             
+            // إنشاء التنبيه
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Follwerk Edition"
-                                                                           message:@"مرحبا بك في نسخة حسين سعد 🇮🇶"
+                                                                           message:@"مرحباً بك في نسخة حسين سعد - @qmyqq 🇮🇶\nتم تفعيل ميزة تعدد الحسابات بنجاح."
                                                                     preferredStyle:UIAlertControllerStyleAlert];
 
-            UIAlertAction *telegramAction = [UIAlertAction actionWithTitle:@"تواصل معي"
+            UIAlertAction *telegramAction = [UIAlertAction actionWithTitle:@"قناة التحديثات"
                                                                      style:UIAlertActionStyleDefault
                                                                    handler:^(UIAlertAction * action) {
                 [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://t.me/qmyqq"] options:@{} completionHandler:nil];
             }];
 
-            UIAlertAction *startAction = [UIAlertAction actionWithTitle:@"ابدأ"
+            UIAlertAction *dismissAction = [UIAlertAction actionWithTitle:@"استمرار"
                                                                   style:UIAlertActionStyleCancel
                                                                 handler:nil];
 
             [alert addAction:telegramAction];
-            [alert addAction:startAction];
+            [alert addAction:dismissAction];
 
-            // طريقة أكثر أماناً للوصول للنافذة بدون استهلاك صلاحيات Sandbox عالية
-            UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-            if (!rootVC) {
-                rootVC = [[[[UIApplication sharedApplication] windows] firstObject] rootViewController];
+            // الطريقة الاحترافية والأكثر أماناً للوصول للنافذة (تتجنب كراش الساند بوكس)
+            UIWindow *keyWindow = nil;
+            if (@available(iOS 13.0, *)) {
+                for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                    if (scene.activationState == UISceneActivationStateForegroundActive) {
+                        for (UIWindow *window in scene.windows) {
+                            if (window.isKeyWindow) {
+                                keyWindow = window;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // إذا فشلت الطريقة الحديثة نستخدم الطريقة التقليدية كخيار احتياطي
+            if (!keyWindow) {
+                keyWindow = [UIApplication sharedApplication].keyWindow;
             }
 
-            [rootVC presentViewController:alert animated:YES completion:nil];
+            UIViewController *rootVC = keyWindow.rootViewController;
+            
+            // التأكد من عدم وجود تنبيه آخر معروض حالياً لتجنب التعارض
+            if (rootVC) {
+                while (rootVC.presentedViewController) {
+                    rootVC = rootVC.presentedViewController;
+                }
+                [rootVC presentViewController:alert animated:YES completion:nil];
+            }
         });
     });
 }
