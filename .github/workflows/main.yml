@@ -1,43 +1,37 @@
-name: Build Hussain Dylib
+name: Decompile Dylib to Source Code
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  workflow_dispatch: # هذا يخليك تشغل العملية يدوياً بضغط زر
 
 jobs:
-  build:
-    runs-on: macos-latest
+  decompile:
+    runs-on: ubuntu-20.04 # نسخة مستقرة لدعم الأداة
+
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: brew install ldid
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake python3 python3-pip flex bison libssl-dev libtinfo5 upx
+        pip3 install setuptools
 
-      - name: Setup Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "~/theos/bin" >> $GITHUB_PATH
+    - name: Download & Setup RetDec
+      run: |
+        # تحميل نسخة RetDec الجاهزة للينكس
+        wget https://github.com/avast/retdec/releases/download/v4.0/retdec-v4.0-ubuntu-64bit.tar.xz
+        tar -xf retdec-v4.0-ubuntu-64bit.tar.xz
+        echo "$(pwd)/retdec/bin" >> $GITHUB_PATH
 
-      - name: Install iOS SDK
-        run: |
-          mkdir -p ~/theos/sdks
-          curl -LO https://github.com/theos/sdks/archive/master.zip
-          unzip -q master.zip
-          mv sdks-master/*.sdk ~/theos/sdks/
-          rm -rf master.zip sdks-master
+    - name: Start Decompilation
+      run: |
+        # تحويل الدايلب إلى كود C++ كامل
+        # --output هو الملف النهائي اللي راح تنزله
+        retdec-decompiler.py jokdpool.dylib --output full_source_code.cpp
 
-      - name: Build Tweak
-        run: |
-          export THEOS=~/theos
-          make clean
-          make FINALPACKAGE=1
-
-      - name: Prepare Artifacts
-        run: |
-          mkdir -p output
-          find .theos/obj/ -name "*.dylib" -exec cp {} output/ \;
-
-      - name: Upload Dylib
-        uses: actions/upload-artifact@v4
-        with:
-          name: Hussain-Edition-Dylib
-          path: output/*.dylib
+    - name: Upload Resulting Code
+      uses: actions/upload-artifact@v3
+      with:
+        name: Compiled-Source-Code
+        path: full_source_code.cpp
