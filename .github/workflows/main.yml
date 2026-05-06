@@ -1,25 +1,15 @@
 name: Build Hussain Dylib
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من واجهة غيت هاب
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: |
-          brew install ldid
-          # توفير الأدوات الأساسية للبناء
-          echo "Installing dependencies..."
+        run: brew install ldid
 
       - name: Setup Theos
         run: |
@@ -29,30 +19,24 @@ jobs:
 
       - name: Install iOS SDK
         run: |
-          # تنزيل SDK محدد لضمان توافق المكتبات
           mkdir -p ~/theos/sdks
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip -q master.zip
           mv sdks-master/*.sdk ~/theos/sdks/
           rm -rf master.zip sdks-master
 
-      - name: Build Tweak (Dylib)
+      - name: Build Tweak
         run: |
           export THEOS=~/theos
-          # تنظيف الملفات القديمة وبناء الحزمة النهائية
           make clean
           make FINALPACKAGE=1
-        env:
-          THEOS: ~/theos
 
       - name: Prepare Artifacts
         run: |
           mkdir -p output
-          # البحث عن ملف الـ dylib الناتج ونقله للمجلد النهائي
-          # غالباً المسار يكون داخل .theos/obj/debug أو .theos/obj/
           find .theos/obj/ -name "*.dylib" -exec cp {} output/ \;
-          
-      - name: Upload Hussain Dylib
+
+      - name: Upload Dylib
         uses: actions/upload-artifact@v4
         with:
           name: Hussain-Edition-Dylib
