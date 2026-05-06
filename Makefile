@@ -1,17 +1,15 @@
 # اسم التويك
 TWEAK_NAME = jokdpool
 
-# الملفات المراد بناؤها
+# ملفات المشروع
 jokdpool_FILES = Tweak.x
-jokdpool_CFLAGS = -fobjc-arc
+jokdpool_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
 
-# المعماريات المستهدفة (64 بت للأجهزة الحديثة)
+# المعماريات المستهدفة
 ARCHS = arm64 arm64e
 
-# إصدار الـ iOS الأدنى
+# إعدادات النظام المستهدف
 TARGET = iphone:clang:latest:14.0
 
 include $(THEOS)/makefiles/common.mk
 include $(THEOS_MAKE_PATH)/tweak.mk
-
-# بعد الانتهاء، سيتم توليد ملف dylib في مجلد .theos/obj
