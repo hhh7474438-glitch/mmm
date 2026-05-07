@@ -1,15 +1,16 @@
-# اسم التويك
-TWEAK_NAME = jokdpool
+# اسم الأداة
+TWEAK_NAME = MyModMenu
 
-# ملفات المشروع
-jokdpool_FILES = Tweak.x
-jokdpool_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
+# الملفات المراد جمعها
+MyModMenu_FILES = Tweak.x
 
-# المعماريات المستهدفة
-ARCHS = arm64 arm64e
+# المكاتب المطلوبة
+MyModMenu_LIBRARIES = substrate
+MyModMenu_FRAMEWORKS = UIKit Foundation
 
-# إعدادات النظام المستهدف
-TARGET = iphone:clang:latest:14.0
+# إعدادات البناء بدون جيلبريك (Non-Jailbreak)
+export TARGET = iphone:clang:latest:14.0
+export ARCHS = arm64
 
 include $(THEOS)/makefiles/common.mk
 include $(THEOS_MAKE_PATH)/tweak.mk
