@@ -6,7 +6,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # تحديث من v3 إلى v4
+        uses: actions/checkout@v4
 
       - name: Setup Theos
         run: |
@@ -23,7 +23,7 @@ jobs:
           make package FINALPACKAGE=1
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4  # تم الحل هنا: التحديث من v3 إلى v4
+        uses: actions/upload-artifact@v4
         with:
           name: MyModDylib
           path: .theos/obj/debug/*.dylib
