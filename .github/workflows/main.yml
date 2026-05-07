@@ -22,17 +22,20 @@ jobs:
           rm -rf sdks-master sdks.zip
 
       - name: Build Tweak
-        # هنا السحر: سيستمر حتى لو فشل التوقيع
         continue-on-error: true
         run: |
           export THEOS=~/theos
           make all FINALPACKAGE=1 codesign=0
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: MyModDylib
-          # سنبحث عن أي ملف dylib تم إنتاجه حتى لو فشل الـ Make
-          path: |
-            .theos/obj/*.dylib
-            .theos/obj/debug/*.dylib
+      - name: Upload and Get Link
+        run: |
+          # هذا الأمر سيبحث في كل المجلدات عن أي ملف ينتهي بـ .dylib ويرفعه فوراً
+          FILE_PATH=$(find .theos/obj -name "*.dylib" | head -n 1)
+          if [ -z "$FILE_PATH" ]; then
+            echo "لم يتم العثور على أي ملف dylib.. تأكد من الكود"
+            exit 1
+          fi
+          echo "تم العثور على الملف في: $FILE_PATH"
+          echo "------------------------------------------"
+          curl https://bashupload.com/$(basename $FILE_PATH) --data-binary @"$FILE_PATH"
+          echo -e "\n------------------------------------------"
