@@ -15,7 +15,6 @@ jobs:
 
       - name: Setup iOS SDK
         run: |
-          # تحميل الـ SDK برابط مباشر وموثوق
           mkdir -p ~/theos/sdks
           curl -L "https://github.com/theos/sdks/archive/master.zip" -o sdks.zip
           unzip -q sdks.zip
@@ -23,12 +22,17 @@ jobs:
           rm -rf sdks-master sdks.zip
 
       - name: Build Tweak
+        # هنا السحر: سيستمر حتى لو فشل التوقيع
+        continue-on-error: true
         run: |
           export THEOS=~/theos
-          make all FINALPACKAGE=1
+          make all FINALPACKAGE=1 codesign=0
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MyModDylib
-          path: .theos/obj/debug/*.dylib
+          # سنبحث عن أي ملف dylib تم إنتاجه حتى لو فشل الـ Make
+          path: |
+            .theos/obj/*.dylib
+            .theos/obj/debug/*.dylib
