@@ -1,37 +1,29 @@
-name: Decompile Dylib to Source Code
-
-on:
-  workflow_dispatch: # هذا يخليك تشغل العملية يدوياً بضغط زر
+name: Build Dylib
+on: [push, pull_request]
 
 jobs:
-  decompile:
-    runs-on: ubuntu-20.04 # نسخة مستقرة لدعم الأداة
-
+  build:
+    runs-on: macos-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake python3 python3-pip flex bison libssl-dev libtinfo5 upx
-        pip3 install setuptools
+      - name: Setup Theos
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=~/theos" >> $GITHUB_ENV
 
-    - name: Download & Setup RetDec
-      run: |
-        # تحميل نسخة RetDec الجاهزة للينكس
-        wget https://github.com/avast/retdec/releases/download/v4.0/retdec-v4.0-ubuntu-64bit.tar.xz
-        tar -xf retdec-v4.0-ubuntu-64bit.tar.xz
-        echo "$(pwd)/retdec/bin" >> $GITHUB_PATH
+      - name: Setup iOS SDK
+        run: |
+          git clone https://github.com/theos/sdks.git $THEOS/sdks
 
-    - name: Start Decompilation
-      run: |
-        # تحويل الدايلب إلى كود C++ كامل
-        # --output هو الملف النهائي اللي راح تنزله
-        retdec-decompiler.py jokdpool.dylib --output full_source_code.cpp
+      - name: Build Tweak
+        run: |
+          export THEOS=~/theos
+          make package FINALPACKAGE=1
 
-    - name: Upload Resulting Code
-      uses: actions/upload-artifact@v3
-      with:
-        name: Compiled-Source-Code
-        path: full_source_code.cpp
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: MyModDylib
+          path: .theos/obj/debug/*.dylib
