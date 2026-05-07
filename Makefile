@@ -1,15 +1,11 @@
-# اسم الأداة
 TWEAK_NAME = MyModMenu
+export codesign = 0
 
-# إعدادات المعالج والنظام
 export TARGET = iphone:clang:latest:14.0
 export ARCHS = arm64
 
-# ملفات المشروع
 MyModMenu_FILES = Tweak.x
 MyModMenu_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-function
-
-# المكاتب والاطارات
 MyModMenu_LIBRARIES = substrate
 MyModMenu_FRAMEWORKS = UIKit Foundation
 
