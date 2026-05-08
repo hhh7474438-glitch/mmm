@@ -14,15 +14,23 @@ void patchMemory(uint64_t offset, uint32_t hexCode) {
 }
 
 %ctor {
+    // ننتظر 15 ثانية لضمان استقرار الذاكرة
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         
-        // العناوين من ملف u.txt الخاص بك
-        patchMemory(0x00028208, 0xD503201F); 
-        patchMemory(0x000937cc, 0xD503201F); 
-        patchMemory(0x0001eda0, 0xD503201F);
+        // محاولة تفعيل الخطوط باستخدام قيمة العودة "True" (0x52800020 تعني mov w0, #1 ثم ret)
+        // سنستخدم العناوين الأكثر احتمالاً من ملفك u.txt
+        
+        // 1. تجربة تفعيل دالة إعادة الحساب
+        patchMemory(0x00028208, 0xD2800020); // MOV X0, #1
+        patchMemory(0x0002820C, 0xD65F03C0); // RET
+        
+        // 2. تجربة دالة الرسم القريبة من الـ Canvas
+        patchMemory(0x000937cc, 0xD2800020); // MOV X0, #1
+        patchMemory(0x000937D0, 0xD65F03C0); // RET
 
+        // تنبيه التأكيد
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hussein Saad"
-                                                                       message:@"تم تفعيل هاك الخطوط بنجاح"
+                                                                       message:@"تمت محاولة التفعيل المباشر للخطوط"
                                                                 preferredStyle:UIAlertControllerStyleAlert];
         [alert addAction:[UIAlertAction actionWithTitle:@"تم" style:UIAlertActionStyleDefault handler:nil]];
         
