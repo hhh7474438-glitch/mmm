@@ -10,32 +10,33 @@ jobs:
 
       - name: Setup Theos
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          # تنصيب ذايوس يدوياً لتجنب مشاكل السكربت التلقائي
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       - name: Setup iOS SDK
         run: |
-          # تحميل الـ SDK لضمان عدم حدوث خطأ أثناء البناء
-          curl -LO https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz
+          # تحميل الـ SDK مباشرة من المصدر وتخطى طلبات API
           mkdir -p $HOME/theos/sdks
+          curl -LO https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz
           tar -xvf iPhoneOS14.5.sdk.tar.xz -C $HOME/theos/sdks
           rm iPhoneOS14.5.sdk.tar.xz
 
       - name: Build Tweak
         run: |
           export THEOS=$HOME/theos
+          # بناء الملف بدون الحاجة لتوقيع الكود حالياً
           make all FINALPACKAGE=1
 
       - name: Upload and Get Link
         run: |
-          # البحث عن ملف الـ dylib في المجلد الناتج
+          # البحث عن الملف ورفعه للحصول على رابط
           FILE_PATH=$(find .theos/obj -name "SecurityHussein.dylib" | head -n 1)
           if [ -z "$FILE_PATH" ]; then
             echo "Error: Dylib not found!"
             exit 1
           fi
-          echo "Dylib Found at: $FILE_PATH"
+          echo "Dylib Found! Uploading..."
           echo "------------------------------------------"
-          # رفع الملف والحصول على رابط تحميل مباشر
           curl https://bashupload.com/SecurityHussein.dylib --data-binary @"$FILE_PATH"
           echo -e "\n------------------------------------------"
