@@ -1,9 +1,9 @@
 Package: com.hussein.security
-Name: SecurityHussein
+Name: Hussein Security Tweak
 Depends: mobilesubstrate
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: Follwerk Protection System
+Description: ادهار رسالة ترحيبية بعد 40 ثانية
 Maintainer: Hussein Saad
 Author: Hussein Saad
 Section: Tweaks
