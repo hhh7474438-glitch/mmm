@@ -1,24 +1,15 @@
-name: Build Dylib
-on: [push, pull_request]
+DEBUG = 0
+FINAL_PACKAGE = 1
 
-jobs:
-  build:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+# استهداف أجهزة الآيفون الحديثة
+TARGET := iphone:clang:latest:14.0
+ARCHS = arm64 arm64e
 
-      - name: Setup Theos
-        run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+include $(THEOS)/makefiles/common.mk
 
-      - name: Build Tweak
-        run: |
-          make package FINALPACKAGE=1
-          
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: SecurityHussein-Dylib
-          path: .theos/obj/install/Library/MobileSubstrate/DynamicLibraries/SecurityHussein.dylib
+TWEAK_NAME = SecurityHussein
+SecurityHussein_FILES = Tweak.x
+SecurityHussein_CFLAGS = -fobjc-arc
+SecurityHussein_FRAMEWORKS = UIKit
+
+include $(THEOS_MAKE_PATH)/tweak.mk
