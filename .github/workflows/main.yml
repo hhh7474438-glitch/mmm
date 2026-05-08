@@ -1,5 +1,5 @@
-name: Build Security Dylib
-on: [push, pull_request, workflow_dispatch]
+name: Build Hussein Dylib
+on: [push, workflow_dispatch]
 
 jobs:
   build:
@@ -8,31 +8,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Dependencies
-        run: |
-          brew install ldid 
-
       - name: Setup Theos
         run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          echo "THEOS=~/theos" >> $GITHUB_ENV
 
       - name: Setup iOS SDK
         run: |
-          mkdir -p $HOME/theos/sdks
-          curl -L "https://github.com/theos/sdks/archive/master.zip" -o sdks.zip
-          unzip -q sdks.zip
-          mv sdks-master/iPhoneOS14.5.sdk $HOME/theos/sdks/
-          rm -rf sdks-master sdks.zip
+          mkdir -p ~/theos/sdks
+          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
+          tar -xf sdk.tar.xz -C ~/theos/sdks/
+          rm sdk.tar.xz
 
-      - name: Build Tweak
+      - name: Build Dylib
         run: |
-          export THEOS=$HOME/theos
-          make clean
-          make all FINALPACKAGE=1 codesign=0
+          export THEOS=~/theos
+          make all FINALPACKAGE=1
 
-      - name: Upload Dylib to GitHub
+      - name: Save Dylib Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SecurityHussein-Dylib  # اسم ملف الـ Zip اللي راح ينزل
-          path: .theos/obj/*/SecurityHussein.dylib  # راح ياخذ الدايلب من أي معمارية انصنعت
+          name: Hussein-Security-Dylib
+          path: .theos/obj/debug/HusseinSecurity.dylib
