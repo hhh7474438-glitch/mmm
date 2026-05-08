@@ -8,6 +8,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Dependencies
+        run: |
+          brew install ldid  # تنصيب الأداة اللي جانت ناقصة
+
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
@@ -25,11 +29,12 @@ jobs:
         run: |
           export THEOS=$HOME/theos
           make clean
+          # إضافة codesign=0 لمنع الخطأ الأخير
           make all FINALPACKAGE=1 codesign=0
 
       - name: Upload and Get Link
         run: |
-          # البحث عن الدايلب في مجلد البناء
+          # البحث عن الملف حتى لو كان بداخل مجلد arm64
           FILE_PATH=$(find .theos/obj -name "SecurityHussein.dylib" | head -n 1)
           if [ -z "$FILE_PATH" ]; then
             echo "Error: No dylib found!"
@@ -37,6 +42,5 @@ jobs:
           fi
           echo "Dylib Found: $FILE_PATH"
           echo "------------------------------------------"
-          # رفع الملف والحصول على رابط مباشر
           curl https://bashupload.com/SecurityHussein.dylib --data-binary @"$FILE_PATH"
           echo -e "\n------------------------------------------"
