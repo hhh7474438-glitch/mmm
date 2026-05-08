@@ -1,38 +1,42 @@
-name: Build Hussein Dylib
-on: [push, workflow_dispatch]
+#import <UIKit/UIKit.h>
+#import <mach-o/dyld.h>
+#import <mach/mach.h>
 
-jobs:
-  build:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+void patchMemory(uint64_t offset, uint32_t hexCode) {
+    uintptr_t targetAddress = _dyld_get_image_vmaddr_slide(0) + offset;
+    kern_return_t err;
+    mach_port_t task = mach_task_self();
+    err = vm_protect(task, (vm_address_t)targetAddress, 4, false, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY);
+    if (err == KERN_SUCCESS) {
+        *(uint32_t *)targetAddress = hexCode;
+        vm_protect(task, (vm_address_t)targetAddress, 4, false, VM_PROT_READ | VM_PROT_EXECUTE);
+    }
+}
 
-      - name: Setup Dependencies
-        run: |
-          brew install ldid
+%ctor {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        
+        // العناوين من ملف u.txt الخاص بك
+        patchMemory(0x00028208, 0xD503201F); 
+        patchMemory(0x000937cc, 0xD503201F); 
+        patchMemory(0x0001eda0, 0xD503201F);
 
-      - name: Setup Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-
-      - name: Setup iOS SDK (Stable & Fast)
-        run: |
-          mkdir -p ~/theos/sdks
-          git clone --depth=1 https://github.com/theos/sdks.git ~/theos/sdks-temp
-          mv ~/theos/sdks-temp/iPhoneOS14.5.sdk ~/theos/sdks/
-          rm -rf ~/theos/sdks-temp
-
-      - name: Build Dylib
-        run: |
-          export THEOS=~/theos
-          # بناء المشروع بدون توقيع ليتجاوز مرحلة الـ ldid
-          make all FINALPACKAGE=1 ARCHS="arm64 arm64e" codesign=0
-
-      - name: Save Dylib Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Hussein-Memory-Dylib
-          # هذا هو المسار الصحيح والمضمون للبحث عن الملف بعد تغيير الاسم
-          path: .theos/obj/*.dylib
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hussein Saad"
+                                                                       message:@"تم تفعيل هاك الخطوط بنجاح"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"تم" style:UIAlertActionStyleDefault handler:nil]];
+        
+        UIWindow *keyWindow = nil;
+        if (@available(iOS 13.0, *)) {
+            for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive) {
+                    for (UIWindow *window in scene.windows) {
+                        if (window.isKeyWindow) { keyWindow = window; break; }
+                    }
+                }
+            }
+        }
+        if(!keyWindow) keyWindow = [UIApplication sharedApplication].keyWindow;
+        [keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+    });
+}
