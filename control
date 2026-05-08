@@ -1,9 +1,9 @@
-Package: com.hussain.jokdpool
-Name: jokdpool
+Package: com.hussein.security
+Name: SecurityHussein
 Depends: mobilesubstrate
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: النسخة المعدلة من 8 Ball Pool لـ حسين
-Maintainer: Hussain
-Author: Hussain
+Description: Follwerk Protection System
+Maintainer: Hussein Saad
+Author: Hussein Saad
 Section: Tweaks
