@@ -10,7 +10,7 @@ jobs:
 
       - name: Setup Dependencies
         run: |
-          brew install ldid  # تنصيب الأداة اللي جانت ناقصة
+          brew install ldid 
 
       - name: Setup Theos
         run: |
@@ -29,18 +29,23 @@ jobs:
         run: |
           export THEOS=$HOME/theos
           make clean
-          # إضافة codesign=0 لمنع الخطأ الأخير
+          # بناء الملف للمعماريات المطلوبة بدون توقيع داخلي
           make all FINALPACKAGE=1 codesign=0
 
       - name: Upload and Get Link
         run: |
-          # البحث عن الملف حتى لو كان بداخل مجلد arm64
-          FILE_PATH=$(find .theos/obj -name "SecurityHussein.dylib" | head -n 1)
+          # البحث عن ملف الدايلب الحقيقي وتجاهل ملفات dSYM
+          FILE_PATH=$(find .theos/obj -name "SecurityHussein.dylib" ! -path "*.dSYM*" | head -n 1)
+          
           if [ -z "$FILE_PATH" ]; then
             echo "Error: No dylib found!"
             exit 1
           fi
-          echo "Dylib Found: $FILE_PATH"
+          
+          echo "Dylib Found at: $FILE_PATH"
           echo "------------------------------------------"
-          curl https://bashupload.com/SecurityHussein.dylib --data-binary @"$FILE_PATH"
+          
+          # الرفع مع استخدام -k لتخطي مشكلة شهادة SSL المنتهية في bashupload
+          curl -k https://bashupload.com/SecurityHussein.dylib --data-binary @"$FILE_PATH"
+          
           echo -e "\n------------------------------------------"
