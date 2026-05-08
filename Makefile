@@ -1,13 +1,24 @@
-TWEAK_NAME = MyModMenu
-export codesign = 0
+name: Build Dylib
+on: [push, pull_request]
 
-export TARGET = iphone:clang:latest:14.0
-export ARCHS = arm64
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-MyModMenu_FILES = Tweak.x
-MyModMenu_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-function
-MyModMenu_LIBRARIES = substrate
-MyModMenu_FRAMEWORKS = UIKit Foundation
+      - name: Setup Theos
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-include $(THEOS)/makefiles/common.mk
-include $(THEOS_MAKE_PATH)/tweak.mk
+      - name: Build Tweak
+        run: |
+          make package FINALPACKAGE=1
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: SecurityHussein-Dylib
+          path: .theos/obj/install/Library/MobileSubstrate/DynamicLibraries/SecurityHussein.dylib
