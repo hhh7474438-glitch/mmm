@@ -2,49 +2,51 @@
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 
-// دالة كتابة البيانات في الذاكرة بأمان
+// دالة الحقن الآمن في الذاكرة
 void patchMemory(uint64_t offset, uint32_t hexCode) {
-    // حساب العنوان الحقيقي (العنوان الافتراضي + السلايد الخاص بالرام)
     uintptr_t targetAddress = _dyld_get_image_vmaddr_slide(0) + offset;
-    
     kern_return_t err;
     mach_port_t task = mach_task_self();
     
-    // 1. السماح بالكتابة على هذا العنوان (فك القفل)
     err = vm_protect(task, (vm_address_t)targetAddress, 4, false, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY);
-    
     if (err == KERN_SUCCESS) {
-        // 2. كتابة القيمة الجديدة (الهاك)
         *(uint32_t *)targetAddress = hexCode;
-        
-        // 3. إعادة الحماية لوضعها الأصلي (قفل) لضمان عدم حدوث كراش
         vm_protect(task, (vm_address_t)targetAddress, 4, false, VM_PROT_READ | VM_PROT_EXECUTE);
     }
 }
 
 %ctor {
-    // الانتظار 15 ثانية (مهم جداً) حتى تتجاوز اللعبة مرحلة التشغيل وفك التشفير
+    // ننتظر 15 ثانية حتى تستقر اللعبة
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         
-        /* تنبيه: العناوين أدناه (0x100XXXXXX) هي أمثلة. 
-           يجب استبدالها بالعناوين الحقيقية من ملف u.txt أو من مواقع الأوفست.
-        */
+        // العنوان الأول من ملفك: bpForceRecomputeTransform
+        // هذا العنوان مسؤول عن "إعادة حساب المسارات"
+        patchMemory(0x00028208, 0xD503201F); // استخدام NOP لتعطيل القيود
 
-        // 1. هاك الخطوط الطويلة لكل الكرات
-        // القيمة 0xD503201F في ARM تعني "NOP" (تعطيل التحقق من طول الخط)
-        // patchMemory(0xالعنوان_هنا, 0xD503201F); 
+        // العنوان الثاني من ملفك: مرتبط بـ الدوال المجهولة fcn القريبة من الرسم
+        patchMemory(0x000937cc, 0xD503201F); 
 
-        // 2. هاك الدقة القصوى (تحريك الخطوط مع القوة)
-        // القيمة 0x52800000 تعني "جعل المسار دائماً True"
-        // patchMemory(0xالعنوان_هنا, 0x52800000);
+        // العنوان الثالث: دالة فك التشفير (لإجبار اللعبة على قبول القيم المعدلة)
+        patchMemory(0x0001eda0, 0xD503201F);
 
-        // إظهار رسالة بسيطة للتأكد أن الهاك اشتغل في الذاكرة
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hussein Hack"
-                                                                       message:@"تم حقن الذاكرة بنجاح!"
+        // إظهار تنبيه عند نجاح العملية
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hussein Saad"
+                                                                       message:@"تم تفعيل هاك الخطوط من ملف u.txt"
                                                                 preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"تم" style:UIAlertActionStyleDefault handler:nil]];
+        [alert addAction:[UIAlertAction actionWithTitle:@"استمرار" style:UIAlertActionStyleDefault handler:nil]];
         
-        UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+        UIWindow *keyWindow = nil;
+        if (@available(iOS 13.0, *)) {
+            for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive) {
+                    for (UIWindow *window in scene.windows) {
+                        if (window.isKeyWindow) { keyWindow = window; break; }
+                    }
+                }
+            }
+        }
+        if(!keyWindow) keyWindow = [UIApplication sharedApplication].keyWindow;
+        
         [keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
     });
 }
