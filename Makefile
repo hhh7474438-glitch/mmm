@@ -1,18 +1,15 @@
-DEBUG = 0
-FINAL_PACKAGE = 1
-
-# استهداف المعماريات الحديثة للآيفون
-TARGET := iphone:clang:latest:14.0
+# اسم المعماريات المدعومة
 ARCHS = arm64 arm64e
+
+# استهداف إصدارات iOS
+TARGET := iphone:clang:latest:14.0
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = SecurityHussein
+TWEAK_NAME = HusseinSecurity
 
-SecurityHussein_FILES = Tweak.x
-# السطر التالي يمنع تحول التحذيرات إلى أخطاء ويسمح بالكود القديم
-SecurityHussein_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable -Wno-error
-
-SecurityHussein_FRAMEWORKS = UIKit Foundation
+# الملفات البرمجية المستخدمة
+HusseinSecurity_FILES = Tweak.x
+HusseinSecurity_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
