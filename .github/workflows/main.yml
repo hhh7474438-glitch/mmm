@@ -29,23 +29,10 @@ jobs:
         run: |
           export THEOS=$HOME/theos
           make clean
-          # بناء الملف للمعماريات المطلوبة بدون توقيع داخلي
           make all FINALPACKAGE=1 codesign=0
 
-      - name: Upload and Get Link
-        run: |
-          # البحث عن ملف الدايلب الحقيقي وتجاهل ملفات dSYM
-          FILE_PATH=$(find .theos/obj -name "SecurityHussein.dylib" ! -path "*.dSYM*" | head -n 1)
-          
-          if [ -z "$FILE_PATH" ]; then
-            echo "Error: No dylib found!"
-            exit 1
-          fi
-          
-          echo "Dylib Found at: $FILE_PATH"
-          echo "------------------------------------------"
-          
-          # الرفع مع استخدام -k لتخطي مشكلة شهادة SSL المنتهية في bashupload
-          curl -k https://bashupload.com/SecurityHussein.dylib --data-binary @"$FILE_PATH"
-          
-          echo -e "\n------------------------------------------"
+      - name: Upload Dylib to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: SecurityHussein-Dylib  # اسم ملف الـ Zip اللي راح ينزل
+          path: .theos/obj/*/SecurityHussein.dylib  # راح ياخذ الدايلب من أي معمارية انصنعت
