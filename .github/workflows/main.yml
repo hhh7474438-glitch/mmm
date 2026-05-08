@@ -13,20 +13,23 @@ jobs:
           git clone --recursive https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Setup iOS SDK
+      - name: Setup iOS SDK (Stable & Fast)
         run: |
+          # إنشاء المجلد وتحميل الـ SDK من المستودع مباشرة لتجنب أخطاء الملفات المضغوطة
           mkdir -p ~/theos/sdks
-          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C ~/theos/sdks/
-          rm sdk.tar.xz
+          git clone --depth=1 https://github.com/theos/sdks.git ~/theos/sdks-temp
+          mv ~/theos/sdks-temp/iPhoneOS14.5.sdk ~/theos/sdks/
+          rm -rf ~/theos/sdks-temp
 
       - name: Build Dylib
         run: |
           export THEOS=~/theos
-          make all FINALPACKAGE=1
+          # بناء المشروع لكل المعماريات الحديثة لضمان عملها على كل الأجهزة
+          make all FINALPACKAGE=1 ARCHS="arm64 arm64e"
 
       - name: Save Dylib Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Hussein-Security-Dylib
-          path: .theos/obj/debug/HusseinSecurity.dylib
+          # المسار الجديد للتأكد من التقاط الملف من داخل مجلد obj
+          path: .theos/obj/debug/*.dylib
