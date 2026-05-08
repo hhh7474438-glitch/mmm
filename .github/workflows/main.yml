@@ -9,16 +9,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Dependencies
-        run: |
-          # تنصيب أداة التوقيع الضرورية لـ Theos
-          brew install ldid
+        run: brew install ldid
 
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Setup iOS SDK (Stable & Fast)
+      - name: Setup iOS SDK
         run: |
           mkdir -p ~/theos/sdks
           git clone --depth=1 https://github.com/theos/sdks.git ~/theos/sdks-temp
@@ -28,12 +26,10 @@ jobs:
       - name: Build Dylib
         run: |
           export THEOS=~/theos
-          # أضفنا codesign=0 لإخباره أننا سنوقع الملف بأنفسنا لاحقاً
           make all FINALPACKAGE=1 ARCHS="arm64 arm64e" codesign=0
 
       - name: Save Dylib Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hussein-Security-Dylib
-          # المسار الصحيح للملف النهائي المدمج
-          path: .theos/obj/HusseinSecurity.dylib
+          name: Hussein-Memory-Dylib
+          path: .theos/obj/*.dylib
