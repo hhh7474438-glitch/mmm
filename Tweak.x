@@ -1,55 +1,32 @@
 #import <UIKit/UIKit.h>
-#import <Foundation/Foundation.h>
-
-// تعريف الدالة لتعديل القوة باستخدام العناوين
-void patch_force() {
-    // استخدمنا (void) لمنع خطأ "المتغير غير مستخدم"
-    uint64_t address = 0x28208; 
-    uint32_t patch = 0xD65F03C0; 
-    (void)address;
-    (void)patch;
-
-    // هنا يتم تطبيق التعديل فعلياً إذا كانت مكتبة KittyMemory مضافة
-    // حالياً الكود سيمر بدون أخطاء في بناء الـ dylib
-}
 
 %ctor {
-    // تنفيذ التعديل فور تشغيل اللعبة
-    patch_force();
+    // رابط سيرفرك - يفضل تستخدم ID الجهاز مستقبلاً
+    NSString *urlStr = @"http://185.239.236.110:5000/verify?key=HUSSEIN-2026";
+    NSURL *url = [NSURL URLWithString:urlStr];
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    [request setHTTPMethod:@"GET"];
+    [request setTimeoutInterval:10.0];
 
-    // إظهار رسالة ترحيبية بعد 30 ثانية
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
-        // طريقة حديثة للحصول على النافذة (Window) لتجنب خطأ keyWindow
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
-                if (scene.activationState == UISceneActivationStateForegroundActive) {
-                    for (UIWindow *w in scene.windows) {
-                        if (w.isKeyWindow) {
-                            window = w;
-                            break;
-                        }
-                    }
-                }
-            }
-        } else {
-            window = [UIApplication sharedApplication].keyWindow;
-        }
+    NSError *error = nil;
+    NSHTTPURLResponse *responseCode = nil;
+    NSData *oData = [NSURLConnection sendSynchronousRequest:request returningResponse:&responseCode error:&error];
 
-        if (window) {
-            UIViewController *rootViewController = window.rootViewController;
-            
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Follwerk Team"
-                                                                           message:@"مرحبا بك في تطبيق المعدل"
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-            
-            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"شكراً" 
-                                                               style:UIAlertActionStyleDefault 
-                                                             handler:nil];
-            
-            [alert addAction:okAction];
-            [rootViewController presentViewController:alert animated:YES completion:nil];
-        }
-    });
+    NSString *res = [[NSString alloc] initWithData:oData encoding:NSUTF8StringEncoding];
+
+    if ([res containsString:@"OK_UNLOCKED"]) {
+        NSLog(@"[Hussein Saad] Access Granted!");
+    } else {
+        // إظهار رسالة خطأ قبل الخروج
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Follwerk Protection" 
+                message:@"Invalid Key! Please contact @znzmz to get access." 
+                preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                exit(0);
+            }]];
+            [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+        });
+    }
 }
