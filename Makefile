@@ -1,15 +1,17 @@
-# اسم المعماريات المدعومة
+# المعماريات المطلوبة
 ARCHS = arm64 arm64e
 
-# استهداف إصدارات iOS
+# استهدف نظام iOS 14 كحد أدنى للبناء
 TARGET := iphone:clang:latest:14.0
 
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = HusseinSecurity
 
-# الملفات البرمجية المستخدمة
+# سطر مهم جداً: تفعيل الـ ARC وتجاهل تحذيرات الأكواد القديمة
+HusseinSecurity_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
+
 HusseinSecurity_FILES = Tweak.x
-HusseinSecurity_CFLAGS = -fobjc-arc
+HusseinSecurity_FRAMEWORKS = UIKit
 
 include $(THEOS_MAKE_PATH)/tweak.mk
