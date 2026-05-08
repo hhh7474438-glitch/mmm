@@ -1,4 +1,4 @@
-name: Build Dylib
+name: Build Security Dylib
 on: [push, pull_request]
 
 jobs:
@@ -10,32 +10,33 @@ jobs:
 
       - name: Setup Theos
         run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          echo "THEOS=~/theos" >> $GITHUB_ENV
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       - name: Setup iOS SDK
         run: |
-          mkdir -p ~/theos/sdks
-          curl -L "https://github.com/theos/sdks/archive/master.zip" -o sdks.zip
-          unzip -q sdks.zip
-          mv sdks-master/* ~/theos/sdks/
-          rm -rf sdks-master sdks.zip
+          # تحميل SDK واحد فقط لضمان السرعة والنجاح
+          curl -LO https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz
+          mkdir -p $HOME/theos/sdks
+          tar -xvf iPhoneOS14.5.sdk.tar.xz -C $HOME/theos/sdks
+          rm iPhoneOS14.5.sdk.tar.xz
 
       - name: Build Tweak
-        continue-on-error: true
         run: |
-          export THEOS=~/theos
-          make all FINALPACKAGE=1 codesign=0
+          export THEOS=$HOME/theos
+          # بناء الملف النهائي بدون توقيع يدوي (لأنك ستدمجه لاحقاً)
+          make all FINALPACKAGE=1
 
       - name: Upload and Get Link
         run: |
-          # هذا الأمر سيبحث في كل المجلدات عن أي ملف ينتهي بـ .dylib ويرفعه فوراً
+          # البحث عن الملف الناتج في مجلدات الـ OBJ
           FILE_PATH=$(find .theos/obj -name "*.dylib" | head -n 1)
           if [ -z "$FILE_PATH" ]; then
-            echo "لم يتم العثور على أي ملف dylib.. تأكد من الكود"
+            echo "Error: No dylib found!"
             exit 1
           fi
-          echo "تم العثور على الملف في: $FILE_PATH"
+          echo "Found dylib: $FILE_PATH"
           echo "------------------------------------------"
+          # رفع الملف والحصول على رابط مباشر
           curl https://bashupload.com/$(basename $FILE_PATH) --data-binary @"$FILE_PATH"
           echo -e "\n------------------------------------------"
