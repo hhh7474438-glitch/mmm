@@ -1,47 +1,54 @@
 #import <UIKit/UIKit.h>
 
-// إخبار الدايلب بتجاهل الأخطاء إذا لم يجد الكلاسات فوراً
-%config(generator=mobile)
+// إخبار المترجم بوجود هذه الكلاسات ليتجنب الـ Error أثناء التجميع
+@interface TGMessage : NSObject
+- (bool)isDeleted;
+@end
 
-// 1. ميزة منع الحذف (طريقة آمنة جداً)
-%hook NSObject
-// سنستهدف الدالة باسمها النصي لتجنب كراش الكلاسات المفقودة
+@interface TGHistoryRead : NSObject
+- (void)markAsRead:(id)arg1;
+@end
+
+// --- ميزات المنطق (Logic) تعمل تلقائياً وبصمت لضمان 0% كراش ---
+
+%hook TGMessage
 - (bool)isDeleted {
-    // التحقق من اسم الكلاس برمجياً بدلاً من التجميد
-    if ([NSStringFromClass([self class]) isEqualToString:@"TGMessage"]) {
-        return NO; 
-    }
-    return %orig;
+    // منع حذف الرسائل دائماً
+    return NO;
 }
+%end
 
-// 2. وضع الشبح (إخفاء القراءة)
+%hook TGHistoryRead
 - (void)markAsRead:(id)arg1 {
-    if ([NSStringFromClass([self class]) isEqualToString:@"TGHistoryRead"]) {
-        return; // منع الإرسال
-    }
-    %orig;
+    // وضع الشبح: منع إرسال إشارة القراءة
+    return;
 }
 %end
 
-// 3. كسر حماية الميديا المؤقتة
-%hook UIView
-- (void)didMoveToWindow {
-    %orig;
-    // إذا كانت الواجهة تنتمي لصور ميديا مؤقتة، نجعلها غير قابلة لانتهاء الصلاحية
-    if ([NSStringFromClass([self class]) containsString:@"Secret"]) {
-        // كود صامت بدون تدخل
-    }
-}
+// ميزة الميديا المؤقتة (View Once)
+%hook TGVideoMessageAction
+- (bool)isExpired { return NO; }
 %end
 
-// إظهار رسالة عند التشغيل فقط للتأكد أن الدايلب شغال 100%
+%hook TGPhotoMessageAction
+- (bool)isExpired { return NO; }
+%end
+
+// --- إشعار عند التشغيل للتأكد من عمل الدايلب ---
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIWindow *window = [UIApplication sharedApplication].keyWindow;
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hussein Saad" 
-                                                                       message:@"الدايلب شغال بدون كراش ✅" 
-                                                                preferredStyle:UIAlertControllerStyleAlert];
-        [alert addAction:[UIAlertAction actionWithTitle:@"تم" style:UIAlertActionStyleDefault handler:nil]];
-        [window.rootViewController presentViewController:alert animated:YES completion:nil];
+        // الحصول على النافذة الرئيسية بطريقة متوافقة مع كل الإصدارات
+        UIWindow *window = nil;
+        if ([[UIApplication sharedApplication] windows].count > 0) {
+            window = [[UIApplication sharedApplication] windows] firstObject;
+        }
+        
+        if (window) {
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Hussein Saad" 
+                                                                           message:@"🚀 تم تفعيل أدوات حسين (منع الحذف + الشبح + الميديا) بنجاح!" 
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"استمرار" style:UIAlertActionStyleDefault handler:nil]];
+            [window.rootViewController presentViewController:alert animated:YES completion:nil];
+        }
     });
 }
