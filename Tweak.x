@@ -1,18 +1,23 @@
 #import <UIKit/UIKit.h>
 
-// تعريف مفاتيح الحفظ
+// تعريف المفاتيح
 #define kAntiDelete @"hussein_anti_delete"
 #define kGhostMode @"hussein_ghost_mode"
 #define kViewOnce @"hussein_view_once"
 
-// --- القسم الأول: واجهة الإعدادات (UI) ---
+// إخبار المترجم أن هذا الكلاس هو ViewController
+@interface ItemListSettingsController : UIViewController
+- (void)openHusseinSettings;
+@end
+
+// --- القسم الأول: واجهة الإعدادات ---
 
 %hook ItemListSettingsController
 
 - (void)viewDidLoad {
     %orig;
     
-    // إضافة زر "أدوات حسين سعد" في أعلى القائمة لتجنب الكراش مع الأقسام المعقدة
+    // إضافة الزر في اليمين
     UIBarButtonItem *husseinBtn = [[UIBarButtonItem alloc] initWithTitle:@"⚙️ أدوات حسين" 
                                                                    style:UIBarButtonItemStylePlain 
                                                                   target:self 
@@ -23,33 +28,37 @@
 %new
 - (void)openHusseinSettings {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 أدوات حسين سعد" 
-                                                                   message:@"تحكم بميزات التيليجرام المعدلة" 
+                                                                   message:@"تحكم بميزات التيليجرام" 
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
     
-    // دالة مساعدة لتبديل الحالة
-    auto addToggle = ^(NSString *title, NSString *key) {
-        BOOL status = [[NSUserDefaults standardUserDefaults] boolForKey:key];
-        NSString *label = [NSString stringWithFormat:@"%@: %@", title, status ? @"✅ مشغل" : @"❌ مطفأ"];
-        [alert addAction:[UIAlertAction actionWithTitle:label style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-            [[NSUserDefaults standardUserDefaults] setBool:!status forKey:key];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-            // تنبيه بضرورة إعادة التشغيل
-            exit(0); 
-        }]];
-    };
+    // ميزة 1: منع الحذف
+    BOOL status1 = [[NSUserDefaults standardUserDefaults] boolForKey:kAntiDelete];
+    [alert addAction:[UIAlertAction actionWithTitle:(status1 ? @"✅ منع الحذف: مشغل" : @"❌ منع الحذف: مطفأ") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [[NSUserDefaults standardUserDefaults] setBool:!status1 forKey:kAntiDelete];
+        exit(0);
+    }]];
 
-    addToggle(@"قراءة الرسائل المحذوفة", kAntiDelete);
-    addToggle(@"وضع الشبح (إخفاء القراءة)", kGhostMode);
-    addToggle(@"مشاهدة الميديا المؤقتة", kViewOnce);
+    // ميزة 2: وضع الشبح
+    BOOL status2 = [[NSUserDefaults standardUserDefaults] boolForKey:kGhostMode];
+    [alert addAction:[UIAlertAction actionWithTitle:(status2 ? @"✅ وضع الشبح: مشغل" : @"❌ وضع الشبح: مطفأ") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [[NSUserDefaults standardUserDefaults] setBool:!status2 forKey:kGhostMode];
+        exit(0);
+    }]];
 
-    [alert addAction:[UIAlertAction actionWithTitle:@"إغلاق" style:UIAlertActionStyleCancel handler:nil]];
+    // ميزة 3: ميديا مؤقتة
+    BOOL status3 = [[NSUserDefaults standardUserDefaults] boolForKey:kViewOnce];
+    [alert addAction:[UIAlertAction actionWithTitle:(status3 ? @"✅ ميديا مؤقتة: مشغل" : @"❌ ميديا مؤقتة: مطفأ") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [[NSUserDefaults standardUserDefaults] setBool:!status3 forKey:kViewOnce];
+        exit(0);
+    }]];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"إلغاء" style:UIAlertActionStyleCancel handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 %end
 
-// --- القسم الثاني: تفعيل الميزات (Logic) ---
+// --- القسم الثاني: المنطق البرمجي (Logic) ---
 
-// 1. منع حذف الرسائل
 %hook TGMessage
 - (BOOL)isDeleted {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:kAntiDelete]) {
@@ -59,17 +68,15 @@
 }
 %end
 
-// 2. وضع الشبح (منع إرسال "تمت القراءة")
 %hook TGHistoryRead
 - (void)markAsRead:(id)arg1 {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:kGhostMode]) {
-        return; // تجاهل أمر القراءة
+        return;
     }
     %orig;
 }
 %end
 
-// 3. كسر حماية الميديا لمرة واحدة (View Once)
 %hook TGVideoMessageAction
 - (BOOL)isExpired {
     if ([[NSUserDefaults standardUserDefaults] boolForKey:kViewOnce]) {
