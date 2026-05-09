@@ -5,92 +5,42 @@
 #define kGhostMode @"hussein_ghost_mode"
 #define kViewOnce @"hussein_view_once"
 
-// إخبار المترجم أن هذا الكلاس هو ViewController
-@interface ItemListSettingsController : UIViewController
-- (void)openHusseinSettings;
-@end
+// حقن القائمة عن طريق "هز الهاتف" لضمان عدم حدوث كراش في الواجهة
+%hook UIWindow
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event {
+    if (event.type == UIEventTypeMotion && event.subtype == UIEventSubtypeMotionShake) {
+        
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 أدوات حسين سعد" 
+                                                                       message:@"تحكم بالميزات (سيتم إغلاق التطبيق لحفظ التغييرات)" 
+                                                                preferredStyle:UIAlertControllerStyleActionSheet];
+        
+        auto addAction = ^(NSString *title, NSString *key) {
+            BOOL status = [[NSUserDefaults standardUserDefaults] boolForKey:key];
+            [alert addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@: %@", title, status ? @"✅" : @"❌"] 
+                                                      style:UIAlertActionStyleDefault 
+                                                    handler:^(UIAlertAction *action) {
+                [[NSUserDefaults standardUserDefaults] setBool:!status forKey:key];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                exit(0); 
+            }]];
+        };
 
-// --- القسم الأول: واجهة الإعدادات ---
+        addAction(@"منع حذف الرسائل", kAntiDelete);
+        addAction(@"وضع الشبح", kGhostMode);
+        addAction(@"الميديا المؤقتة", kViewOnce);
 
-%hook ItemListSettingsController
-
-- (void)viewDidLoad {
+        [alert addAction:[UIAlertAction actionWithTitle:@"إلغاء" style:UIAlertActionStyleCancel handler:nil]];
+        
+        [[ViewUtils TopViewController] presentViewController:alert animated:YES completion:nil];
+    }
     %orig;
-    
-    // إضافة الزر في اليمين
-    UIBarButtonItem *husseinBtn = [[UIBarButtonItem alloc] initWithTitle:@"⚙️ أدوات حسين" 
-                                                                   style:UIBarButtonItemStylePlain 
-                                                                  target:self 
-                                                                  action:@selector(openHusseinSettings)];
-    self.navigationItem.rightBarButtonItem = husseinBtn;
-}
-
-%new
-- (void)openHusseinSettings {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"🚀 أدوات حسين سعد" 
-                                                                   message:@"تحكم بميزات التيليجرام" 
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    // ميزة 1: منع الحذف
-    BOOL status1 = [[NSUserDefaults standardUserDefaults] boolForKey:kAntiDelete];
-    [alert addAction:[UIAlertAction actionWithTitle:(status1 ? @"✅ منع الحذف: مشغل" : @"❌ منع الحذف: مطفأ") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        [[NSUserDefaults standardUserDefaults] setBool:!status1 forKey:kAntiDelete];
-        exit(0);
-    }]];
-
-    // ميزة 2: وضع الشبح
-    BOOL status2 = [[NSUserDefaults standardUserDefaults] boolForKey:kGhostMode];
-    [alert addAction:[UIAlertAction actionWithTitle:(status2 ? @"✅ وضع الشبح: مشغل" : @"❌ وضع الشبح: مطفأ") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        [[NSUserDefaults standardUserDefaults] setBool:!status2 forKey:kGhostMode];
-        exit(0);
-    }]];
-
-    // ميزة 3: ميديا مؤقتة
-    BOOL status3 = [[NSUserDefaults standardUserDefaults] boolForKey:kViewOnce];
-    [alert addAction:[UIAlertAction actionWithTitle:(status3 ? @"✅ ميديا مؤقتة: مشغل" : @"❌ ميديا مؤقتة: مطفأ") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        [[NSUserDefaults standardUserDefaults] setBool:!status3 forKey:kViewOnce];
-        exit(0);
-    }]];
-
-    [alert addAction:[UIAlertAction actionWithTitle:@"إلغاء" style:UIAlertActionStyleCancel handler:nil]];
-    [self presentViewController:alert animated:YES completion:nil];
 }
 %end
 
-// --- القسم الثاني: المنطق البرمجي (Logic) ---
-
+// --- ميزات المنطق (Logic) - تم تبسيطها لتجنب الكراش ---
 %hook TGMessage
-- (BOOL)isDeleted {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:kAntiDelete]) {
-        return NO; 
-    }
-    return %orig;
-}
-%end
-
-%hook TGHistoryRead
-- (void)markAsRead:(id)arg1 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:kGhostMode]) {
-        return;
-    }
-    %orig;
-}
-%end
-
-%hook TGVideoMessageAction
-- (BOOL)isExpired {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:kViewOnce]) {
-        return NO;
-    }
-    return %orig;
-}
-%end
-
-%hook TGPhotoMessageAction
-- (BOOL)isExpired {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:kViewOnce]) {
-        return NO;
-    }
+- (id)isDeleted { 
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:kAntiDelete]) return nil;
     return %orig;
 }
 %end
