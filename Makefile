@@ -1,13 +1,11 @@
 ARCHS = arm64 arm64e
-TARGET := iphone:clang:latest:14.0
+TARGET = iphone:clang:latest:14.0
+INSTALL_TARGET_PROCESSES = Telegram
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = HusseinMemoryHack
-
-HusseinMemoryHack_FILES = Tweak.x
-HusseinMemoryHack_CFLAGS = -fobjc-arc -Wno-deprecated-declarations
-# إضافة Frameworks النظام الضرورية
-HusseinMemoryHack_FRAMEWORKS = UIKit Foundation CoreGraphics
+TWEAK_NAME = HusseinTelegram
+HusseinTelegram_FILES = Tweak.x
+HusseinTelegram_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
