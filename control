@@ -1,9 +1,9 @@
-Package: com.hussein.security
-Name: Hussein Security Tweak
+Package: com.hussein.pool8mod
+Name: 8 Ball Pool Long Line
 Depends: mobilesubstrate
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: ادهار رسالة ترحيبية بعد 40 ثانية
-Maintainer: Hussein Saad
+Description: Long Line Hack with Real Offsets
 Author: Hussein Saad
-Section: Tweaks
+Maintainer: Hussein Saad
+AuthorName: Hussein Saad
