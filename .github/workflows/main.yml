@@ -7,24 +7,29 @@ on:
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fakeroot build-essential git perl clang libssl-dev
+
     - name: Setup Theos Environment
       run: |
         bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-        echo "THEOS=/Users/runner/theos" >> $GITHUB_ENV
+        echo "THEOS=/home/runner/theos" >> $GITHUB_ENV
         
     - name: Download iOS SDKs
       run: |
-        git clone https://github.com/theos/sdks.git /Users/runner/theos/sdks
+        git clone https://github.com/theos/sdks.git /home/runner/theos/sdks
         
     - name: Compile Source Code
       run: |
-        export THEOS=/Users/runner/theos
+        export THEOS=/home/runner/theos
         make package FINALPACKAGE=1
         
     - name: Upload Output Artifacts
