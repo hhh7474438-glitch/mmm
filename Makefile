@@ -4,10 +4,11 @@ THEOS_PLATFORM_SDK_ROOT = $(THEOS)/sdks
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = Poolyyy8Mod
+# ثبتنا الاسم هنا على Pool8Mod
+TWEAK_NAME = Pool8Mod
 
-# أضفنا *.x هنا حتى يقرأ ملفك Tweak.x تلقائياً
-Pool8Mod_FILES = $(wildcard *.x *.xm *.mm *.cpp)
+# هذا السطر يقرا ملفك Tweak.xm تلقائياً مهما كان مكانه
+Pool8Mod_FILES = Tweak.xm
 Pool8Mod_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
