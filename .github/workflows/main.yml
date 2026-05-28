@@ -25,6 +25,7 @@ jobs:
         
     - name: Download iOS SDKs
       run: |
+        rm -rf /home/runner/theos/sdks
         git clone https://github.com/theos/sdks.git /home/runner/theos/sdks
         
     - name: Compile Source Code
